@@ -1,14 +1,6 @@
-<div align="center">
-  <img src="cat-argus.png" alt="Cat-Argus" width="220" />
+# Argus 👁
 
-# Cat-Argus
-
-*A cat with a hundred eyes that never close.*
-
-</div>
-
-> *Argus Panoptes was the all-seeing giant of Greek mythology — covered in eyes, never sleeping, always watching.  
-> Cat-Argus is that, but a cat. Your cat. Sitting on your machine. Watching everything you do.*
+> *Named after Argus Panoptes — the hundred-eyed giant of Greek mythology who never slept and watched everything.*
 
 A Python daemon that silently runs in the background, recording which app and window you have active every 5 seconds. Generates daily and weekly reports so you can understand your own habits: where your time actually goes, what you focus on, and when you drift.
 
