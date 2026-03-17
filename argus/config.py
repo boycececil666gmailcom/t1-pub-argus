@@ -1,15 +1,21 @@
+"""Runtime configuration and app-to-category mapping."""
+
+# region Imports
+
 import os
 from pathlib import Path
 
-# Where all Argus data lives
+# endregion
+
+# region Constants
+
 DATA_DIR = Path(os.environ.get("ARGUS_DATA", Path.home() / ".argus"))
 DB_PATH = DATA_DIR / "argus.db"
 
-# Daemon behaviour
-POLL_INTERVAL = 5          # seconds between snapshots
-IDLE_THRESHOLD = 60        # seconds of no input before marking as idle
+POLL_INTERVAL = 5    # seconds between snapshots
+IDLE_THRESHOLD = 60  # seconds of no input before marking as idle
 
-# App → category mapping (process name prefix, case-insensitive)
+# Process name prefix → display category (case-insensitive prefix or substring match)
 CATEGORIES: dict[str, list[str]] = {
     "Browser":       ["chrome", "firefox", "msedge", "opera", "brave", "vivaldi", "iexplore"],
     "IDE / Editor":  ["code", "cursor", "pycharm", "idea", "clion", "rider", "vim", "nvim",
@@ -30,10 +36,25 @@ CATEGORIES: dict[str, list[str]] = {
                       "resmon", "dxdiag"],
 }
 
+# endregion
+
+# region Public Methods / API
+
 
 def categorise(app_name: str) -> str:
+    """Map a process name to its display category.
+
+    Args:
+        app_name: Process name (without .exe suffix).
+
+    Returns:
+        A category string from CATEGORIES, or "Other" if no match is found.
+    """
     lower = app_name.lower()
     for category, patterns in CATEGORIES.items():
         if any(lower.startswith(p) or p in lower for p in patterns):
             return category
     return "Other"
+
+
+# endregion

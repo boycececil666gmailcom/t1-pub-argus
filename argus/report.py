@@ -1,5 +1,7 @@
 """Rich-powered report generation."""
 
+# region Imports
+
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -13,12 +15,19 @@ from rich.text import Text
 from .config import POLL_INTERVAL, categorise
 from .storage import db_stats, query_range
 
+# endregion
+
+# region Fields / Private
+
 console = Console()
 
+# endregion
 
-# ── helpers ──────────────────────────────────────────────────────────────────
+# region Private Methods
+
 
 def _fmt(seconds: float) -> str:
+    """Format a duration in seconds as a human-readable string (e.g. '1h 05m', '3m 20s')."""
     h = int(seconds // 3600)
     m = int((seconds % 3600) // 60)
     s = int(seconds % 60)
@@ -30,12 +39,20 @@ def _fmt(seconds: float) -> str:
 
 
 def _bar(fraction: float, width: int = 24) -> str:
+    """Render a filled Unicode progress bar for the given fraction (0.0–1.0)."""
     filled = round(fraction * width)
     return "█" * filled + "░" * (width - filled)
 
 
 def _aggregate(rows) -> tuple[dict[str, float], dict[str, float]]:
-    """Returns (app→seconds, category→seconds) dicts, idle excluded."""
+    """Tally snapshot rows into per-app and per-category second totals.
+
+    Args:
+        rows: Iterable of sqlite3.Row snapshot records (idle rows excluded upstream).
+
+    Returns:
+        Tuple of (app_name → seconds, category → seconds) dicts.
+    """
     apps: dict[str, float] = defaultdict(float)
     cats: dict[str, float] = defaultdict(float)
     for row in rows:
@@ -44,9 +61,17 @@ def _aggregate(rows) -> tuple[dict[str, float], dict[str, float]]:
     return dict(apps), dict(cats)
 
 
-# ── daily report ─────────────────────────────────────────────────────────────
+# endregion
+
+# region Public Methods / API
+
 
 def daily_report(date: datetime) -> None:
+    """Print a full daily activity report for the given date.
+
+    Args:
+        date: The day to report on; only the date component is used.
+    """
     start = datetime(date.year, date.month, date.day)
     end = start + timedelta(days=1)
 
@@ -61,7 +86,8 @@ def daily_report(date: datetime) -> None:
         console.print("\n  [dim]No data recorded for this day.[/dim]\n")
         return
 
-    # ── top apps table ────────────────────────────────────────────────────────
+    # region Top Apps table
+
     app_table = Table(
         title="[bold white]Top Apps[/bold white]",
         box=box.SIMPLE_HEAD,
@@ -78,7 +104,10 @@ def daily_report(date: datetime) -> None:
         frac = secs / total_secs if total_secs else 0
         app_table.add_row(app, _fmt(secs), f"[green]{_bar(frac)}[/green]", f"{frac*100:.1f}")
 
-    # ── category breakdown ────────────────────────────────────────────────────
+    # endregion
+
+    # region Category Breakdown table
+
     cat_table = Table(
         title="[bold white]Categories[/bold white]",
         box=box.SIMPLE_HEAD,
@@ -94,6 +123,8 @@ def daily_report(date: datetime) -> None:
         frac = secs / total_secs if total_secs else 0
         cat_table.add_row(cat, _fmt(secs), f"[yellow]{_bar(frac)}[/yellow]")
 
+    # endregion
+
     console.print()
     console.print(Columns([app_table, cat_table], padding=(0, 4)))
     console.print(
@@ -107,11 +138,12 @@ def daily_report(date: datetime) -> None:
     console.print()
 
 
-# ── weekly report ─────────────────────────────────────────────────────────────
-
 def weekly_report(anchor: datetime) -> None:
-    """Show the 7-day week containing `anchor`."""
-    # Align to Monday of the week
+    """Print a 7-day weekly activity report for the week containing anchor.
+
+    Args:
+        anchor: Any date within the desired week; the report always starts on Monday.
+    """
     monday = anchor - timedelta(days=anchor.weekday())
     monday = datetime(monday.year, monday.month, monday.day)
 
@@ -122,6 +154,8 @@ def weekly_report(anchor: datetime) -> None:
 
     week_apps: dict[str, float] = defaultdict(float)
     week_cats: dict[str, float] = defaultdict(float)
+
+    # region Day-by-day table
 
     day_table = Table(
         title="[bold white]Day-by-day[/bold white]",
@@ -146,14 +180,17 @@ def weekly_report(anchor: datetime) -> None:
 
         total = sum(apps.values())
         top = max(apps, key=apps.get) if apps else "—"
-        is_today = day.date() == anchor.date()
         day_label = day.strftime("%a %d")
-        if is_today:
+        if day.date() == anchor.date():
             day_label = f"[bold]{day_label} ◀[/bold]"
 
         day_table.add_row(day_label, _fmt(total) if total else "[dim]—[/dim]", top)
 
+    # endregion
+
     week_total = sum(week_apps.values())
+
+    # region Weekly Categories table
 
     cat_table = Table(
         title="[bold white]Weekly categories[/bold white]",
@@ -170,10 +207,10 @@ def weekly_report(anchor: datetime) -> None:
         frac = secs / week_total if week_total else 0
         cat_table.add_row(cat, _fmt(secs), f"[yellow]{_bar(frac)}[/yellow]")
 
-    console.print()
-    console.print(Columns([day_table, cat_table], padding=(0, 4)))
+    # endregion
 
-    # Top apps for the week
+    # region Top Apps table
+
     top_table = Table(
         title="[bold white]Top apps this week[/bold white]",
         box=box.SIMPLE_HEAD,
@@ -190,6 +227,10 @@ def weekly_report(anchor: datetime) -> None:
         frac = secs / week_total if week_total else 0
         top_table.add_row(app, _fmt(secs), f"[green]{_bar(frac)}[/green]", f"{frac*100:.1f}")
 
+    # endregion
+
+    console.print()
+    console.print(Columns([day_table, cat_table], padding=(0, 4)))
     console.print(top_table)
     console.print(
         Panel(
@@ -200,9 +241,13 @@ def weekly_report(anchor: datetime) -> None:
     console.print()
 
 
-# ── status snapshot ───────────────────────────────────────────────────────────
-
 def status_panel(win, idle_secs: float) -> None:
+    """Print a live status panel showing the current window and idle state.
+
+    Args:
+        win: WindowInfo dict from tracker.get_active_window(), or None.
+        idle_secs: Seconds since the last keyboard or mouse input.
+    """
     from .config import IDLE_THRESHOLD
 
     idle_label = (
@@ -232,3 +277,6 @@ def status_panel(win, idle_secs: float) -> None:
     console.print(Panel(body, title="[bold cyan]Argus — Status[/bold cyan]", box=box.ROUNDED))
     console.print(Text(footer, style="dim"))
     console.print()
+
+
+# endregion

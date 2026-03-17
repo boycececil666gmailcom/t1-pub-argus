@@ -8,9 +8,11 @@ Usage:
   python main.py report --date 2026-03-15
   python main.py week           # this week's report
   python main.py status         # current window + idle time
-  python main.py install        # add to Windows startup
+  python main.py install        # add to Windows startup (registry)
   python main.py uninstall      # remove from Windows startup
 """
+
+# region Imports
 
 from __future__ import annotations
 
@@ -21,6 +23,10 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
+# endregion
+
+# region Fields / Private
+
 app = typer.Typer(
     name="argus",
     help="Argus — always-on activity tracker and behavior reporter.",
@@ -28,12 +34,15 @@ app = typer.Typer(
 )
 console = Console()
 
-_TASK_NAME = "ArgusDaemon"
+_STARTUP_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+_STARTUP_NAME = "ArgusDaemon"
 _THIS = Path(sys.executable).resolve()
 _SCRIPT = Path(__file__).resolve()
 
+# endregion
 
-# ── commands ──────────────────────────────────────────────────────────────────
+# region Public Methods / API
+
 
 @app.command()
 def start() -> None:
@@ -83,50 +92,63 @@ def status() -> None:
 
 @app.command()
 def install() -> None:
-    """Register Argus as a Windows startup task (runs at login, hidden)."""
-    import subprocess
+    """Register Argus to auto-start at Windows login via the registry Run key."""
+    import winreg
 
-    cmd = (
-        f'schtasks /Create /TN "{_TASK_NAME}" /TR '
-        f'\\"{_THIS}\\" \\"{_SCRIPT}\\" start '
-        f'/SC ONLOGON /RL HIGHEST /F'
-    )
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    if result.returncode == 0:
-        console.print(f"[bold green]✓[/bold green] Argus scheduled as '{_TASK_NAME}'.")
-        console.print(f"  It will start automatically at next login.")
-    else:
-        console.print(f"[bold red]✗[/bold red] Failed:\n{result.stderr}")
+    value = f'"{_THIS}" "{_SCRIPT}" start'
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _STARTUP_KEY, access=winreg.KEY_SET_VALUE)
+        winreg.SetValueEx(key, _STARTUP_NAME, 0, winreg.REG_SZ, value)
+        winreg.CloseKey(key)
+        console.print(f"[bold green]OK[/bold green] Registered '{_STARTUP_NAME}' in startup.")
+        console.print(f"   Runs: {value}")
+    except OSError as e:
+        console.print(f"[bold red]FAIL[/bold red] Could not write registry: {e}")
         raise typer.Exit(1)
 
 
 @app.command()
 def uninstall() -> None:
-    """Remove the Argus Windows startup task."""
-    import subprocess
+    """Remove the Argus auto-start registry entry."""
+    import winreg
 
-    result = subprocess.run(
-        f'schtasks /Delete /TN "{_TASK_NAME}" /F',
-        shell=True,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode == 0:
-        console.print(f"[bold green]✓[/bold green] Task '{_TASK_NAME}' removed.")
-    else:
-        console.print(f"[bold red]✗[/bold red] Could not remove:\n{result.stderr}")
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _STARTUP_KEY, access=winreg.KEY_SET_VALUE)
+        winreg.DeleteValue(key, _STARTUP_NAME)
+        winreg.CloseKey(key)
+        console.print(f"[bold green]OK[/bold green] Removed '{_STARTUP_NAME}' from startup.")
+    except FileNotFoundError:
+        console.print(f"[yellow]Not found[/yellow] '{_STARTUP_NAME}' was not registered.")
+    except OSError as e:
+        console.print(f"[bold red]FAIL[/bold red] Could not remove registry entry: {e}")
         raise typer.Exit(1)
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+# endregion
+
+# region Private Methods
+
 
 def _parse_date(s: str) -> datetime:
+    """Parse a YYYY-MM-DD string into a datetime, exiting with an error on failure.
+
+    Args:
+        s: Date string in YYYY-MM-DD format.
+
+    Returns:
+        Parsed datetime object.
+
+    Raises:
+        typer.Exit: If the string does not match the expected format.
+    """
     try:
         return datetime.strptime(s, "%Y-%m-%d")
     except ValueError:
         console.print(f"[red]Invalid date '{s}'. Use YYYY-MM-DD.[/red]")
         raise typer.Exit(1)
 
+
+# endregion
 
 if __name__ == "__main__":
     app()

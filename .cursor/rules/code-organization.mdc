@@ -1,0 +1,83 @@
+---
+description: Enforce code organization with regions, ordering, and API comments
+alwaysApply: true
+---
+
+# Code Organization
+
+## Region Structure
+
+Always divide files into named regions in this order:
+
+```python
+# region Imports
+...
+# endregion
+
+# region Constants
+...
+# endregion
+
+# region Fields / Private
+...
+# endregion
+
+# region Fields / Public
+...
+# endregion
+
+# region Initialization
+...
+# endregion
+
+# region Private Methods
+...
+# endregion
+
+# region Public Methods / API
+...
+# endregion
+```
+
+For languages that support it, use the native syntax:
+- **C# / JS / TS**: `#region Name` / `#endregion`
+- **Python**: `# region Name` / `# endregion`
+
+Only include regions that are relevant — skip empty ones.
+
+## Member Ordering
+
+Within each file, order members as:
+1. Imports / dependencies
+2. Constants and config
+3. Private fields / state
+4. Public fields / properties
+5. Constructor / init
+6. Private methods (helpers, internals)
+7. Public methods / API surface
+
+## API Comments
+
+Add a docstring/comment to every public function, class, or method that is part of the external API or called from other modules. Include:
+- What it does (one line)
+- Parameters (if non-obvious)
+- Return value (if non-obvious)
+- Exceptions it may raise
+
+```python
+# ✅ GOOD
+def query_range(start_ts: float, end_ts: float, include_idle: bool = False) -> list:
+    """Return snapshots in [start_ts, end_ts).
+
+    Args:
+        start_ts: Unix timestamp range start (inclusive).
+        end_ts: Unix timestamp range end (exclusive).
+        include_idle: If True, include idle snapshots.
+    """
+
+# ❌ BAD — no doc on a public API function
+def query_range(start_ts, end_ts):
+    ...
+```
+
+Internal / private helpers only need a comment if the logic is non-obvious.
