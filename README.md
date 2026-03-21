@@ -1,5 +1,7 @@
 # Argus
 
+**README languages:** English · [日本語](README.ja.md) · [中文](README.zh.md)
+
 > *Named after Argus Panoptes — the hundred-eyed giant of Greek mythology who never slept and watched everything.*
 
 A Python tool that silently records which app and window you have active every 5 seconds. Run it in the background, then pull up a live dashboard or a rich terminal report to see exactly where your time goes.
