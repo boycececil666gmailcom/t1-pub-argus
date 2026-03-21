@@ -31,6 +31,8 @@ STRINGS: dict[str, dict[str, str]] = {
     # ── English ───────────────────────────────────────────────────────────────
     "en": {
         "subtitle":             "Activity Tracker",
+        "help":                 "Help",
+        "get_started":          "Get Started",
         "app":                  "App",
         "time":                 "Time",
         "bar":                  "Bar",
@@ -62,6 +64,8 @@ STRINGS: dict[str, dict[str, str]] = {
     # ── Japanese ──────────────────────────────────────────────────────────────
     "ja": {
         "subtitle":             "アクティビティトラッカー",
+        "help":                 "ヘルプ",
+        "get_started":          "始める",
         "app":                  "アプリ",
         "time":                 "時間",
         "bar":                  "バー",
@@ -93,6 +97,8 @@ STRINGS: dict[str, dict[str, str]] = {
     # ── Chinese Simplified ────────────────────────────────────────────────────
     "zh": {
         "subtitle":             "活动追踪器",
+        "help":                 "帮助",
+        "get_started":          "开始",
         "app":                  "应用",
         "time":                 "时间",
         "bar":                  "进度",
@@ -124,6 +130,8 @@ STRINGS: dict[str, dict[str, str]] = {
     # ── French ────────────────────────────────────────────────────────────────
     "fr": {
         "subtitle":             "Suivi d'activité",
+        "help":                 "Aide",
+        "get_started":          "Commencer",
         "app":                  "Application",
         "time":                 "Durée",
         "bar":                  "Barre",
@@ -155,6 +163,8 @@ STRINGS: dict[str, dict[str, str]] = {
     # ── German ────────────────────────────────────────────────────────────────
     "de": {
         "subtitle":             "Aktivitätstracker",
+        "help":                 "Hilfe",
+        "get_started":          "Loslegen",
         "app":                  "App",
         "time":                 "Zeit",
         "bar":                  "Balken",
@@ -187,6 +197,8 @@ STRINGS: dict[str, dict[str, str]] = {
     # Primary language of Mexico and most of Latin America.
     "es": {
         "subtitle":             "Rastreador de actividad",
+        "help":                 "Ayuda",
+        "get_started":          "Empezar",
         "app":                  "Aplicación",
         "time":                 "Tiempo",
         "bar":                  "Barra",

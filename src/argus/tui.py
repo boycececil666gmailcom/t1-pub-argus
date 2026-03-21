@@ -12,7 +12,8 @@ from datetime import datetime, timedelta
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, ScrollableContainer, Vertical
+from textual.containers import Center, Horizontal, ScrollableContainer, Vertical
+from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Footer, Header, Label, Rule, Static
 
 from .autostart import is_enabled as autostart_is_enabled
@@ -149,6 +150,128 @@ class StatusWidget(Static):
 
 # endregion
 
+# region Modal Screens
+
+
+class HelpScreen(ModalScreen):
+    """Keyboard-shortcut reference card — press ? or Esc to close."""
+
+    BINDINGS = [Binding("escape,question_mark", "dismiss", "Close")]
+
+    CSS = """
+    HelpScreen {
+        align: center middle;
+    }
+    #help-box {
+        width: 58;
+        height: auto;
+        border: round $primary;
+        background: $surface;
+        padding: 1 2;
+    }
+    #help-box .help-heading {
+        text-style: bold;
+        color: $primary;
+        margin: 1 0 0 0;
+    }
+    #help-box .help-hint {
+        color: $text-disabled;
+        margin: 1 0 0 0;
+        text-align: center;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="help-box"):
+            yield Label("Argus — Help", classes="help-heading")
+            yield Rule()
+            yield Static(
+                "  [bold cyan]?[/]   This help screen\n"
+                "  [bold cyan]R[/]   Refresh all data\n"
+                "  [bold cyan]T[/]   Cycle colour theme\n"
+                "  [bold cyan]L[/]   Cycle language\n"
+                "  [bold cyan]A[/]   Toggle Auto Start (launch at login)\n"
+                "  [bold cyan]O[/]   Open data folder\n"
+                "  [bold cyan]Q[/]   Quit"
+            )
+            yield Rule()
+            yield Label("Toolbar buttons", classes="help-heading")
+            yield Static(
+                f"  [dim]Auto Start ON/OFF[/]   toggle login auto-start\n"
+                f"  [dim]EN  English[/]          cycle language\n"
+                f"  [dim]Open DB Folder[/]        open [cyan]{DATA_DIR}[/]"
+            )
+            yield Rule()
+            yield Label("Data", classes="help-heading")
+            yield Static(
+                f"  Snapshot every [cyan]{POLL_INTERVAL}s[/]  "
+                f"·  idle >[cyan]{IDLE_THRESHOLD}s[/] excluded from reports\n"
+                f"  Database: [dim]{DATA_DIR / 'argus.db'}[/]"
+            )
+            yield Label("Press [bold]Esc[/] or [bold]?[/] to close", classes="help-hint")
+
+    def on_key(self, _) -> None:
+        self.dismiss()
+
+
+class WelcomeScreen(ModalScreen):
+    """First-run onboarding overlay — shown once, dismissed with 'Get Started'."""
+
+    CSS = """
+    WelcomeScreen {
+        align: center middle;
+    }
+    #welcome-box {
+        width: 56;
+        height: auto;
+        border: round $primary;
+        background: $surface;
+        padding: 1 2;
+    }
+    #welcome-title {
+        text-style: bold;
+        color: $primary;
+        text-align: center;
+        margin: 0 0 1 0;
+    }
+    #welcome-box .welcome-section {
+        text-style: bold;
+        color: $accent;
+        margin: 1 0 0 0;
+    }
+    #btn-start {
+        margin: 1 0 0 0;
+        width: 100%;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="welcome-box"):
+            yield Label("Welcome to Argus", id="welcome-title")
+            yield Static(
+                "  Argus quietly records which app and window you\n"
+                "  have active every 5 seconds — so you always know\n"
+                "  exactly where your time goes."
+            )
+            yield Rule()
+            yield Label("Getting started", classes="welcome-section")
+            yield Static(
+                "  [cyan]*[/] The dashboard is already updating live\n"
+                "  [cyan]*[/] Press [bold]T[/] to change the colour theme\n"
+                "  [cyan]*[/] Press [bold]L[/] to change the language\n"
+                "  [cyan]*[/] Press [bold]A[/] to enable Auto Start at login\n"
+                "  [cyan]*[/] Press [bold]?[/] anytime to see all shortcuts\n"
+                "  [cyan]*[/] Press [bold]Q[/] to quit"
+            )
+            with Center():
+                yield Button(t("get_started") + "  →", id="btn-start", variant="primary")
+
+    def on_button_pressed(self, _: Button.Pressed) -> None:
+        self.dismiss()
+
+
+# endregion
+
 # region App
 
 
@@ -240,10 +363,11 @@ class ArgusApp(App):
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("r", "refresh", "Refresh"),
-        Binding("o", "open_db_folder", "Open DB"),
+        Binding("t", "cycle_theme", "Theme"),
         Binding("l", "cycle_language", "Language"),
         Binding("a", "toggle_autostart", "Auto Start"),
-        Binding("t", "cycle_theme", "Theme"),
+        Binding("o", "open_db_folder", "Open DB"),
+        Binding("question_mark", "show_help", "Help"),
     ]
 
     # region Compose
@@ -285,11 +409,20 @@ class ArgusApp(App):
     # region Initialization
 
     def on_mount(self) -> None:
-        """Add table columns, load initial data, and start the auto-refresh timer."""
+        """Add table columns, load initial data, start auto-refresh, and show first-run welcome."""
         self.sub_title = t("subtitle")
         self._setup_tables()
         self._refresh()
         self.set_interval(_UI_REFRESH, self._refresh)
+
+        # Show the welcome screen once — never again after the first run.
+        if not load_settings().get("seen_welcome"):
+            self.call_after_refresh(self._show_welcome)
+
+    def _show_welcome(self) -> None:
+        def _mark_seen(_) -> None:
+            save_settings({"seen_welcome": True})
+        self.push_screen(WelcomeScreen(), _mark_seen)
 
     # endregion
 
@@ -406,6 +539,10 @@ class ArgusApp(App):
     # endregion
 
     # region Public Methods / API
+
+    def action_show_help(self) -> None:
+        """Open the keyboard shortcut reference overlay."""
+        self.push_screen(HelpScreen())
 
     def action_refresh(self) -> None:
         """Manually trigger a full refresh of all widgets."""
