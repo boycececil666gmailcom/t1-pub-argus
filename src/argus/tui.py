@@ -18,7 +18,7 @@ from textual.widgets import Button, DataTable, Footer, Header, Label, Rule, Stat
 
 from .autostart import is_enabled as autostart_is_enabled
 from .autostart import toggle as autostart_toggle
-from .config import DATA_DIR, IDLE_THRESHOLD, POLL_INTERVAL, categorise
+from .config import DATA_DIR, IDLE_THRESHOLD, POLL_INTERVAL, REPORTS_DIR, categorise
 from .config import load_settings, save_settings
 from .i18n import LANGUAGES, cycle_language, get_language, set_language, t
 from .report import _aggregate, _bar, _fmt
@@ -191,7 +191,7 @@ class HelpScreen(ModalScreen):
                 "  [bold cyan]T[/]   Cycle colour theme\n"
                 "  [bold cyan]L[/]   Cycle language\n"
                 "  [bold cyan]A[/]   Toggle Auto Start (launch at login)\n"
-                "  [bold cyan]O[/]   Open data folder\n"
+                "  [bold cyan]O[/]   Open folder where Argus saves files\n"
                 "  [bold cyan]Q[/]   Quit"
             )
             yield Rule()
@@ -199,14 +199,15 @@ class HelpScreen(ModalScreen):
             yield Static(
                 f"  [dim]Auto Start ON/OFF[/]   toggle login auto-start\n"
                 f"  [dim]EN  English[/]          cycle language\n"
-                f"  [dim]Open DB Folder[/]        open [cyan]{DATA_DIR}[/]"
+                f"  [dim]Open saved data folder[/]   database, settings, and [cyan]reports[/] under [cyan]{DATA_DIR}[/]"
             )
             yield Rule()
             yield Label("Data", classes="help-heading")
             yield Static(
                 f"  Snapshot every [cyan]{POLL_INTERVAL}s[/]  "
                 f"·  idle >[cyan]{IDLE_THRESHOLD}s[/] excluded from reports\n"
-                f"  Database: [dim]{DATA_DIR / 'argus.db'}[/]"
+                f"  Database: [dim]{DATA_DIR / 'argus.db'}[/]\n"
+                f"  Reports (from terminal [cyan]report[/] / [cyan]week[/]): [dim]{REPORTS_DIR}[/]"
             )
             yield Label("Press [bold]Esc[/] or [bold]?[/] to close", classes="help-hint")
 
@@ -366,7 +367,7 @@ class ArgusApp(App):
         Binding("t", "cycle_theme", "Theme"),
         Binding("l", "cycle_language", "Language"),
         Binding("a", "toggle_autostart", "Auto Start"),
-        Binding("o", "open_db_folder", "Open DB"),
+        Binding("o", "open_db_folder", "Data folder"),
         Binding("question_mark", "show_help", "Help"),
     ]
 

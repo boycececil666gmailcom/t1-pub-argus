@@ -75,13 +75,13 @@ python src/main.py tui
 # 仅在前台运行追踪器（Ctrl+C 停止）
 python src/main.py start
 
-# 今日活动报告
+# 今日活动报告（终端显示，并保存 .txt 到 ~/.argus/reports/）
 python src/main.py report
 
 # 指定日期的报告
 python src/main.py report --date 2026-03-15
 
-# 本周报告
+# 本周报告（与数据库同目录保存 .txt）
 python src/main.py week
 
 # 查看当前正在做什么
@@ -168,7 +168,12 @@ TUI 支持 6 种语言，按 `L` 循环切换：
 
 ## 数据
 
-所有数据存储于 `~/.argus/argus.db`（SQLite），每个 5 秒快照对应一行：
+默认保存在 `~/.argus/`（可用环境变量 `ARGUS_DATA` 修改）。
+
+- `argus.db` — SQLite（每个 5 秒快照一行）
+- `reports/` — `report` / `week` 命令的文本导出（`daily-YYYY-MM-DD.txt`、`weekly-YYYY-MM-DD.txt` 为当周周一日期）
+
+表结构（一行 = 一条快照）：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|

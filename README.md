@@ -75,13 +75,13 @@ python src/main.py tui
 # Start the tracker alone in the foreground (Ctrl+C to stop)
 python src/main.py start
 
-# Today's activity report
+# Today's activity report (prints in the terminal and saves a .txt under ~/.argus/reports/)
 python src/main.py report
 
 # Report for a specific day
 python src/main.py report --date 2026-03-15
 
-# This week's report
+# This week's report (also saved next to the database)
 python src/main.py week
 
 # What are you doing right now?
@@ -167,7 +167,12 @@ Your theme choice is also saved and restored automatically.
 
 ## Data
 
-Everything is stored in `~/.argus/argus.db` (SQLite). One row per 5-second snapshot:
+Everything is stored under `~/.argus/` by default (override with env `ARGUS_DATA`):
+
+- `argus.db` — SQLite, one row per 5-second snapshot
+- `reports/` — plain-text exports from `report` and `week` commands (`daily-YYYY-MM-DD.txt`, `weekly-YYYY-MM-DD.txt` with Monday’s date)
+
+Database schema — one row per snapshot:
 
 | Column | Type | Description |
 |---|---|---|
