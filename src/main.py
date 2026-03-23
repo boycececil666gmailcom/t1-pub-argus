@@ -79,7 +79,7 @@ def report(
         help="Date to report — YYYY-MM-DD (default: today).",
     ),
 ) -> None:
-    """Show a daily activity report (also saves plain text under your Argus data folder)."""
+    """Show a daily activity report."""
     from argus.report import daily_report
     daily_report(_parse_date(date) if date else datetime.now())
 
@@ -91,7 +91,7 @@ def week(
         help="Any date within the desired week — YYYY-MM-DD (default: this week).",
     ),
 ) -> None:
-    """Show a weekly activity report (also saves plain text under your Argus data folder)."""
+    """Show a weekly activity report."""
     from argus.report import weekly_report
     weekly_report(_parse_date(date) if date else datetime.now())
 

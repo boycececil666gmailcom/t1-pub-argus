@@ -75,13 +75,13 @@ python src/main.py tui
 # Start the tracker alone in the foreground (Ctrl+C to stop)
 python src/main.py start
 
-# Today's activity report (prints in the terminal and saves a .txt under ~/.argus/reports/)
+# Today's activity report
 python src/main.py report
 
 # Report for a specific day
 python src/main.py report --date 2026-03-15
 
-# This week's report (also saved next to the database)
+# This week's report
 python src/main.py week
 
 # What are you doing right now?
@@ -112,10 +112,10 @@ argus install
 **What it shows**
 
 - **Status panel** — active app, category, window title, idle time, and total snapshot count
-- **Today** — top 10 apps and category breakdown with progress bars
-- **This Week** — day-by-day summary table plus weekly top apps and categories
+- **Today** — top 10 apps and category breakdown with progress bars (◀ ▶ and **Today** jump to other calendar days)
+- **This Week** — day-by-day summary table plus weekly top apps and categories (◀ ▶ and **This week** jump to other weeks)
 
-Everything auto-refreshes every 5 seconds.
+Everything auto-refreshes every 5 seconds. While viewing **Today** / **This week**, the dashboard stays on the live calendar day and week (including after midnight).
 
 **Keyboard shortcuts**
 
@@ -126,6 +126,8 @@ Everything auto-refreshes every 5 seconds.
 | `L` | Cycle through UI languages |
 | `A` | Toggle Auto Start (enable / disable login launch) |
 | `O` | Open the data folder in the file manager |
+| `[` `]` | Previous / next day (dashboard history) |
+| `{` `}` | Previous / next week (dashboard history) |
 | `Q` | Quit |
 
 **Toolbar buttons** (same actions, clickable)
@@ -167,12 +169,9 @@ Your theme choice is also saved and restored automatically.
 
 ## Data
 
-Everything is stored under `~/.argus/` by default (override with env `ARGUS_DATA`):
+Everything is stored in `~/.argus/argus.db` (SQLite) by default (override the folder with env `ARGUS_DATA`). One row per 5-second snapshot:
 
-- `argus.db` — SQLite, one row per 5-second snapshot
-- `reports/` — plain-text exports from `report` and `week` commands (`daily-YYYY-MM-DD.txt`, `weekly-YYYY-MM-DD.txt` with Monday’s date)
-
-Database schema — one row per snapshot:
+Schema:
 
 | Column | Type | Description |
 |---|---|---|

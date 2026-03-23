@@ -18,7 +18,7 @@ from textual.widgets import Button, DataTable, Footer, Header, Label, Rule, Stat
 
 from .autostart import is_enabled as autostart_is_enabled
 from .autostart import toggle as autostart_toggle
-from .config import DATA_DIR, IDLE_THRESHOLD, POLL_INTERVAL, REPORTS_DIR, categorise
+from .config import DATA_DIR, IDLE_THRESHOLD, POLL_INTERVAL, categorise
 from .config import load_settings, save_settings
 from .i18n import LANGUAGES, cycle_language, get_language, set_language, t
 from .report import _aggregate, _bar, _fmt
@@ -163,7 +163,7 @@ class HelpScreen(ModalScreen):
         align: center middle;
     }
     #help-box {
-        width: 58;
+        width: 64;
         height: auto;
         border: round $primary;
         background: $surface;
@@ -192,14 +192,15 @@ class HelpScreen(ModalScreen):
                 "  [bold cyan]L[/]   Cycle language\n"
                 "  [bold cyan]A[/]   Toggle Auto Start (launch at login)\n"
                 "  [bold cyan]O[/]   Open folder where Argus saves files\n"
-                "  [bold cyan]Q[/]   Quit"
+                "  [bold cyan]Q[/]   Quit\n"
+                "  [dim]Dashboard: ◀ ▶ plus Today / This week browse past days & weeks (see footer keys).[/]"
             )
             yield Rule()
             yield Label("Toolbar buttons", classes="help-heading")
             yield Static(
                 f"  [dim]Auto Start ON/OFF[/]   toggle login auto-start\n"
                 f"  [dim]EN  English[/]          cycle language\n"
-                f"  [dim]Open saved data folder[/]   database, settings, and [cyan]reports[/] under [cyan]{DATA_DIR}[/]"
+                f"  [dim]Open saved data folder[/]   database and settings under [cyan]{DATA_DIR}[/]"
             )
             yield Rule()
             yield Label("Data", classes="help-heading")
@@ -207,7 +208,7 @@ class HelpScreen(ModalScreen):
                 f"  Snapshot every [cyan]{POLL_INTERVAL}s[/]  "
                 f"·  idle >[cyan]{IDLE_THRESHOLD}s[/] excluded from reports\n"
                 f"  Database: [dim]{DATA_DIR / 'argus.db'}[/]\n"
-                f"  Reports (from terminal [cyan]report[/] / [cyan]week[/]): [dim]{REPORTS_DIR}[/]"
+                f"  Use ◀ ▶ and Today / This week to browse past days and weeks."
             )
             yield Label("Press [bold]Esc[/] or [bold]?[/] to close", classes="help-hint")
 
@@ -277,7 +278,7 @@ class WelcomeScreen(ModalScreen):
 
 
 class ArgusApp(App):
-    """Argus dashboard — live status, today's activity, and this week's breakdown."""
+    """Argus dashboard — live status plus browsable daily and weekly history."""
 
     TITLE = "Argus"
 
@@ -307,6 +308,30 @@ class ArgusApp(App):
         color: $primary;
         margin: 0 0 0 1;
         padding: 0;
+    }
+
+    .section-header {
+        height: auto;
+        align: left middle;
+        margin: 0;
+        padding: 0;
+    }
+
+    .section-header .section-label {
+        width: 1fr;
+    }
+
+    .nav-row {
+        width: auto;
+        height: auto;
+    }
+
+    Button.nav-btn {
+        min-width: 5;
+    }
+
+    #btn-day-today, #btn-week-this {
+        min-width: 14;
     }
 
     .summary {
@@ -368,6 +393,10 @@ class ArgusApp(App):
         Binding("l", "cycle_language", "Language"),
         Binding("a", "toggle_autostart", "Auto Start"),
         Binding("o", "open_db_folder", "Data folder"),
+        Binding("left_square_bracket", "day_prev", "Day −"),
+        Binding("right_square_bracket", "day_next", "Day +"),
+        Binding("braceleft", "week_prev", "Week −"),
+        Binding("braceright", "week_next", "Week +"),
         Binding("question_mark", "show_help", "Help"),
     ]
 
@@ -385,7 +414,12 @@ class ArgusApp(App):
                 yield Button(t("open_db_folder"), id="btn-open-db")
 
             yield Rule()
-            yield Label("", id="today-label", classes="section-label")
+            with Horizontal(classes="section-header"):
+                yield Label("", id="today-label", classes="section-label")
+                with Horizontal(classes="nav-row"):
+                    yield Button("◀", id="btn-day-prev", classes="nav-btn")
+                    yield Button(t("nav_today"), id="btn-day-today")
+                    yield Button("▶", id="btn-day-next", classes="nav-btn")
             with Horizontal(classes="cols"):
                 with Vertical(classes="col"):
                     yield DataTable(id="today-apps", show_cursor=False)
@@ -394,7 +428,12 @@ class ArgusApp(App):
             yield Label("", id="today-summary", classes="summary")
 
             yield Rule()
-            yield Label("", id="week-label", classes="section-label")
+            with Horizontal(classes="section-header"):
+                yield Label("", id="week-label", classes="section-label")
+                with Horizontal(classes="nav-row"):
+                    yield Button("◀", id="btn-week-prev", classes="nav-btn")
+                    yield Button(t("nav_this_week"), id="btn-week-this")
+                    yield Button("▶", id="btn-week-next", classes="nav-btn")
             yield DataTable(id="weekly-days", show_cursor=False)
             with Horizontal(classes="cols"):
                 with Vertical(classes="col"):
@@ -411,6 +450,7 @@ class ArgusApp(App):
 
     def on_mount(self) -> None:
         """Add table columns, load initial data, start auto-refresh, and show first-run welcome."""
+        self._init_view_state()
         self.sub_title = t("subtitle")
         self._setup_tables()
         self._refresh()
@@ -429,6 +469,15 @@ class ArgusApp(App):
 
     # region Private Methods
 
+    def _init_view_state(self) -> None:
+        """Reset day/week navigation to track the real calendar (live today & this week)."""
+        now = datetime.now()
+        self._pin_day_to_today = True
+        self._pin_week_to_current = True
+        self._view_day = datetime(now.year, now.month, now.day)
+        m = now - timedelta(days=now.weekday())
+        self._week_monday = datetime(m.year, m.month, m.day)
+
     def _setup_tables(self) -> None:
         """Add column headers to every DataTable (call after language change too)."""
         cols_apps = (t("app"), t("time"), t("bar"), t("pct"))
@@ -446,6 +495,8 @@ class ArgusApp(App):
         self.query_one("#btn-open-db",   Button).label = t("open_db_folder")
         self.query_one("#btn-language",  Button).label = _lang_label()
         self.query_one("#btn-autostart", Button).label = _autostart_label()
+        self.query_one("#btn-day-today", Button).label = t("nav_today")
+        self.query_one("#btn-week-this", Button).label = t("nav_this_week")
         for sel in ("#today-apps", "#today-cats", "#weekly-days", "#weekly-cats", "#weekly-apps"):
             self.query_one(sel, DataTable).clear(columns=True)
         self._setup_tables()
@@ -456,16 +507,22 @@ class ArgusApp(App):
         self.query_one(StatusWidget).refresh_data()
         self._refresh_today()
         self._refresh_week()
+        self._update_nav_states()
 
     def _refresh_today(self) -> None:
-        """Reload today's app and category tables from the DB."""
-        today = datetime.now()
-        self.query_one("#today-label", Label).update(
-            t("today_label", today.strftime("%A, %B %d %Y"))
-        )
+        """Reload the selected day's app and category tables from the DB."""
+        if self._pin_day_to_today:
+            n = datetime.now()
+            self._view_day = datetime(n.year, n.month, n.day)
 
-        start = datetime(today.year, today.month, today.day)
+        start = self._view_day
         end   = start + timedelta(days=1)
+        date_str = start.strftime("%A, %B %d %Y")
+        day_heading = (
+            t("today_label", date_str) if self._pin_day_to_today else t("day_past_label", date_str)
+        )
+        self.query_one("#today-label", Label).update(day_heading)
+
         rows  = query_range(start.timestamp(), end.timestamp())
         apps, cats = _aggregate(rows)
         total = sum(apps.values())
@@ -479,15 +536,24 @@ class ArgusApp(App):
         )
 
     def _refresh_week(self) -> None:
-        """Reload this week's day-by-day table, categories, and top apps from the DB."""
-        today  = datetime.now()
-        monday = today - timedelta(days=today.weekday())
-        monday = datetime(monday.year, monday.month, monday.day)
-        sunday = monday + timedelta(days=6)
+        """Reload the selected week's day-by-day table, categories, and top apps from the DB."""
+        if self._pin_week_to_current:
+            today = datetime.now()
+            m = today - timedelta(days=today.weekday())
+            self._week_monday = datetime(m.year, m.month, m.day)
 
-        self.query_one("#week-label", Label).update(
-            t("week_label", monday.strftime("%b %d"), sunday.strftime("%b %d, %Y"))
-        )
+        monday = self._week_monday
+        sunday = monday + timedelta(days=6)
+        real_today = datetime.now().date()
+
+        if self._pin_week_to_current:
+            self.query_one("#week-label", Label).update(
+                t("week_label", monday.strftime("%b %d"), sunday.strftime("%b %d, %Y"))
+            )
+        else:
+            self.query_one("#week-label", Label).update(
+                t("week_past_label", monday.strftime("%b %d"), sunday.strftime("%b %d, %Y"))
+            )
 
         week_apps: dict[str, float] = {}
         week_cats: dict[str, float] = {}
@@ -508,7 +574,7 @@ class ArgusApp(App):
             total_day = sum(apps.values())
             top       = max(apps, key=apps.get) if apps else "—"
             day_label = day.strftime("%a %b %d")
-            if day.date() == today.date():
+            if self._pin_week_to_current and day.date() == real_today:
                 day_label = f"▶ {day_label}"
             days_tbl.add_row(day_label, _fmt(total_day) if total_day else "—", top)
 
@@ -520,6 +586,18 @@ class ArgusApp(App):
             if week_total
             else t("no_data_week")
         )
+
+    def _update_nav_states(self) -> None:
+        """Disable next buttons when already at the latest day or week."""
+        today_d = datetime.now().date()
+        vd = self._view_day.date()
+        self.query_one("#btn-day-next", Button).disabled = vd >= today_d
+
+        now = datetime.now()
+        cur_m = now - timedelta(days=now.weekday())
+        cur_m_d = datetime(cur_m.year, cur_m.month, cur_m.day).date()
+        wm_d = self._week_monday.date()
+        self.query_one("#btn-week-next", Button).disabled = wm_d >= cur_m_d
 
     def _fill_apps(self, sel: str, apps: dict, total: float, limit: int = 10) -> None:
         """Clear and repopulate an apps DataTable sorted by time descending."""
@@ -548,6 +626,64 @@ class ArgusApp(App):
     def action_refresh(self) -> None:
         """Manually trigger a full refresh of all widgets."""
         self._refresh()
+
+    def action_day_prev(self) -> None:
+        """Show the previous calendar day (leave pinned-to-today mode)."""
+        if self._pin_day_to_today:
+            n = datetime.now()
+            self._view_day = datetime(n.year, n.month, n.day) - timedelta(days=1)
+            self._pin_day_to_today = False
+        else:
+            self._view_day -= timedelta(days=1)
+        self._refresh_today()
+        self._update_nav_states()
+
+    def action_day_next(self) -> None:
+        """Show the next calendar day, up to and including today."""
+        cap = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        nxt = self._view_day + timedelta(days=1)
+        if nxt.date() >= cap.date():
+            self._view_day = cap
+            self._pin_day_to_today = True
+        else:
+            self._pin_day_to_today = False
+            self._view_day = nxt
+        self._refresh_today()
+        self._update_nav_states()
+
+    def action_day_today(self) -> None:
+        """Jump back to the live current day."""
+        self._pin_day_to_today = True
+        self._refresh_today()
+        self._update_nav_states()
+
+    def action_week_prev(self) -> None:
+        """Show the previous ISO week (Monday–Sunday)."""
+        self._pin_week_to_current = False
+        self._week_monday -= timedelta(days=7)
+        self._refresh_week()
+        self._update_nav_states()
+
+    def action_week_next(self) -> None:
+        """Show the next week, up to the current calendar week."""
+        now = datetime.now()
+        cur_m = now - timedelta(days=now.weekday())
+        cap = datetime(cur_m.year, cur_m.month, cur_m.day)
+        nxt = self._week_monday + timedelta(days=7)
+        if nxt.date() >= cap.date():
+            self._week_monday = cap
+            self._pin_week_to_current = True
+        else:
+            self._pin_week_to_current = False
+            self._week_monday = nxt
+        self._refresh_week()
+        self._update_nav_states()
+
+    def action_week_this(self) -> None:
+        """Jump back to the live current week."""
+        self._pin_week_to_current = True
+        self._refresh_week()
+        self._update_nav_states()
 
     def action_open_db_folder(self) -> None:
         """Open the Argus data directory in the system file manager."""
@@ -593,12 +729,25 @@ class ArgusApp(App):
         Args:
             event: The button press event carrying the button's ID.
         """
-        if event.button.id == "btn-open-db":
+        bid = event.button.id
+        if bid == "btn-open-db":
             self.action_open_db_folder()
-        elif event.button.id == "btn-autostart":
+        elif bid == "btn-autostart":
             self.action_toggle_autostart()
-        elif event.button.id == "btn-language":
+        elif bid == "btn-language":
             self.action_cycle_language()
+        elif bid == "btn-day-prev":
+            self.action_day_prev()
+        elif bid == "btn-day-next":
+            self.action_day_next()
+        elif bid == "btn-day-today":
+            self.action_day_today()
+        elif bid == "btn-week-prev":
+            self.action_week_prev()
+        elif bid == "btn-week-next":
+            self.action_week_next()
+        elif bid == "btn-week-this":
+            self.action_week_this()
 
     # endregion
 

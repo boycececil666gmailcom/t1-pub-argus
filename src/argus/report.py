@@ -4,7 +4,6 @@
 
 from collections import defaultdict
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from rich import box
 from rich.columns import Columns
@@ -13,18 +12,12 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from .config import POLL_INTERVAL, REPORTS_DIR, categorise
+from .config import POLL_INTERVAL, categorise
 from .storage import db_stats, query_range
 
 # endregion
 
 console = Console()
-
-
-def _save_report_text(recorder: Console, path: Path) -> None:
-    """Write Rich `export_text()` output to disk (UTF-8)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(recorder.export_text(clear=False), encoding="utf-8")
 
 # region Helpers
 
@@ -85,26 +78,19 @@ def _aggregate(rows) -> tuple[dict[str, float], dict[str, float]]:
 
 
 def daily_report(date: datetime) -> None:
-    """Print a full daily activity report for the given date.
-
-    Also writes a plain-text copy under ``REPORTS_DIR`` (e.g. ``daily-2026-03-21.txt``).
-    """
-    rc = Console(record=True, width=120)
+    """Print a full daily activity report for the given date."""
     start = datetime(date.year, date.month, date.day)
     rows  = query_range(start.timestamp(), (start + timedelta(days=1)).timestamp())
     apps, cats = _aggregate(rows)
     total = sum(apps.values())
 
-    rc.rule(
+    console.rule(
         f"[bold cyan]Argus[/bold cyan]  ·  Daily Report  ·  "
         f"[dim]{date.strftime('%A, %B %d %Y')}[/dim]"
     )
 
     if not rows:
-        rc.print("\n  [dim]No data recorded for this day.[/dim]\n")
-        out_path = REPORTS_DIR / f"daily-{start.strftime('%Y-%m-%d')}.txt"
-        _save_report_text(rc, out_path)
-        console.print(f"[dim]Report saved:[/dim] [cyan]{out_path}[/cyan]")
+        console.print("\n  [dim]No data recorded for this day.[/dim]\n")
         return
 
     # Top apps table
@@ -126,32 +112,26 @@ def daily_report(date: datetime) -> None:
         frac = secs / total if total else 0
         cat_tbl.add_row(cat, _fmt(secs), f"[yellow]{_bar(frac)}[/yellow]")
 
-    rc.print()
-    rc.print(Columns([app_tbl, cat_tbl], padding=(0, 4)))
-    rc.print(Panel(
+    console.print()
+    console.print(Columns([app_tbl, cat_tbl], padding=(0, 4)))
+    console.print(Panel(
         f"  Total active time:  [bold green]{_fmt(total)}[/bold green]"
         f"  ·  Snapshots: [dim]{len(rows)}[/dim]"
         f"  ·  Interval: [dim]{POLL_INTERVAL}s[/dim]",
         box=box.SIMPLE,
     ))
-    rc.print()
-
-    out_path = REPORTS_DIR / f"daily-{start.strftime('%Y-%m-%d')}.txt"
-    _save_report_text(rc, out_path)
-    console.print(f"[dim]Report saved:[/dim] [cyan]{out_path}[/cyan]")
+    console.print()
 
 
 def weekly_report(anchor: datetime) -> None:
     """Print a 7-day weekly report for the week containing anchor.
 
-    The week always starts on Monday. A plain-text copy is saved under ``REPORTS_DIR``
-    (e.g. ``weekly-2026-03-17.txt`` for the Monday of that week).
+    The week always starts on Monday.
     """
-    rc = Console(record=True, width=120)
     monday = anchor - timedelta(days=anchor.weekday())
     monday = datetime(monday.year, monday.month, monday.day)
 
-    rc.rule(
+    console.rule(
         f"[bold cyan]Argus[/bold cyan]  ·  Weekly Report  ·  "
         f"[dim]w/c {monday.strftime('%b %d %Y')}[/dim]"
     )
@@ -203,18 +183,14 @@ def weekly_report(anchor: datetime) -> None:
         frac = secs / week_total if week_total else 0
         top_tbl.add_row(app, _fmt(secs), f"[green]{_bar(frac)}[/green]", f"{frac*100:.1f}")
 
-    rc.print()
-    rc.print(Columns([day_tbl, cat_tbl], padding=(0, 4)))
-    rc.print(top_tbl)
-    rc.print(Panel(
+    console.print()
+    console.print(Columns([day_tbl, cat_tbl], padding=(0, 4)))
+    console.print(top_tbl)
+    console.print(Panel(
         f"  Weekly active total:  [bold green]{_fmt(week_total)}[/bold green]",
         box=box.SIMPLE,
     ))
-    rc.print()
-
-    out_path = REPORTS_DIR / f"weekly-{monday.strftime('%Y-%m-%d')}.txt"
-    _save_report_text(rc, out_path)
-    console.print(f"[dim]Report saved:[/dim] [cyan]{out_path}[/cyan]")
+    console.print()
 
 
 def status_panel(win, idle_secs: float) -> None:

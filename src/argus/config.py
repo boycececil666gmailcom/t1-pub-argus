@@ -12,8 +12,6 @@ from pathlib import Path
 
 DATA_DIR = Path(os.environ.get("ARGUS_DATA", Path.home() / ".argus"))
 DB_PATH  = DATA_DIR / "argus.db"
-# Text exports from `argus report` / `argus week` (plain text, alongside the database).
-REPORTS_DIR = DATA_DIR / "reports"
 
 _SETTINGS_PATH = DATA_DIR / "settings.json"
 
