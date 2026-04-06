@@ -20,6 +20,24 @@ Live **TUI** on Windows (`argus tui`): status strip, today’s app and category 
 
 The following [Mermaid](https://mermaid.js.org/) blocks render natively on GitHub. They document the module structure, key types, the tracking polling loop, and the `report` command call sequence.
 
+### Sequence diagram — `report`
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI as main.py
+    participant Report as report.py
+    participant Storage as storage.py
+    participant Rich as Rich console
+    User->>CLI: report optional date
+    CLI->>Report: daily_report(datetime)
+    Report->>Storage: query_range(start, end)
+    Storage-->>Report: snapshot rows
+    Report->>Report: aggregate and categorise
+    Report->>Rich: tables and panels
+    Rich-->>User: terminal output
+```
+
 ### Module structure
 
 High-level dependency flow: `main.py` delegates to each `argus/` module.
@@ -101,24 +119,6 @@ flowchart TD
     H --> I
     I --> C
     C -->|no / interrupt| J([Stop])
-```
-
-### Sequence diagram — `report`
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant CLI as main.py
-    participant Report as report.py
-    participant Storage as storage.py
-    participant Rich as Rich console
-    User->>CLI: report optional date
-    CLI->>Report: daily_report(datetime)
-    Report->>Storage: query_range(start, end)
-    Storage-->>Report: snapshot rows
-    Report->>Report: aggregate and categorise
-    Report->>Rich: tables and panels
-    Rich-->>User: terminal output
 ```
 
 ---
