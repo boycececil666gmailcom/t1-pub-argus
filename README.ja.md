@@ -6,6 +6,117 @@
 
 5 秒ごとにアクティブなアプリとウィンドウを静かに記録する Python ツールです。バックグラウンドで動かしながら、ライブダッシュボードやターミナルレポートで自分の時間の使い方を把握できます。
 
+## Screenshots
+
+スクリーンショットは [English README](README.md#screenshots) を参照してください。
+
+---
+
+## Architecture diagrams
+
+The following [Mermaid](https://mermaid.js.org/) blocks render natively on GitHub. They document the module structure, key types, the tracking polling loop, and the `report` command call sequence.
+
+### Module structure
+
+High-level dependency flow: `main.py` delegates to each `argus/` module.
+
+```mermaid
+flowchart LR
+    subgraph entry[Entry]
+        main[main.py]
+    end
+    subgraph pkg[argus package]
+        config[config.py]
+        tracker[tracker.py]
+        storage[storage.py]
+        daemon[daemon.py]
+        report[report.py]
+        tui[tui.py]
+        autostart[autostart.py]
+        i18n[i18n.py]
+    end
+    main --> daemon
+    main --> report
+    main --> tui
+    main --> autostart
+    main --> tracker
+    daemon --> tracker
+    daemon --> storage
+    daemon --> config
+    tui --> tracker
+    tui --> storage
+    tui --> config
+    tui --> report
+    tui --> autostart
+    tui --> i18n
+    report --> storage
+    report --> config
+    autostart --> config
+    storage --> config
+```
+
+### Class diagram
+
+`WindowInfo` is the TypedDict snapshot shape returned by the tracker; TUI screens subclass Textual widgets.
+
+```mermaid
+classDiagram
+    direction TB
+    class App
+    class Static
+    class ModalScreen
+    App <|-- ArgusApp
+    Static <|-- StatusWidget
+    ModalScreen <|-- HelpScreen
+    ModalScreen <|-- WelcomeScreen
+    class WindowInfo {
+        <<TypedDict>>
+        app_name
+        window_title
+        exe_path
+    }
+    note for App "textual.app.App"
+    note for Static "textual.widgets.Static"
+    note for ModalScreen "textual.screen.ModalScreen"
+```
+
+### Activity diagram — tracking loop
+
+Shared logic for the `start` / daemon and the TUI background poller: poll interval → idle check → record snapshot → wait → repeat.
+
+```mermaid
+flowchart TD
+    A([Start tracker]) --> B[init_db]
+    B --> C{Still running?}
+    C -->|yes| D[get_idle_seconds]
+    D --> E[get_active_window]
+    E --> F{Foreground window known?}
+    F -->|yes| G[record snapshot]
+    F -->|no| H[Skip write]
+    G --> I[Wait POLL_INTERVAL]
+    H --> I
+    I --> C
+    C -->|no / interrupt| J([Stop])
+```
+
+### Sequence diagram — `report`
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI as main.py
+    participant Report as report.py
+    participant Storage as storage.py
+    participant Rich as Rich console
+    User->>CLI: report optional date
+    CLI->>Report: daily_report(datetime)
+    Report->>Storage: query_range(start, end)
+    Storage-->>Report: snapshot rows
+    Report->>Report: aggregate and categorise
+    Report->>Rich: tables and panels
+    Rich-->>User: terminal output
+```
+
 ---
 
 ## 技術スタック
