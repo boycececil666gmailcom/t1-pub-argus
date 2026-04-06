@@ -12,6 +12,57 @@ Screenshots are available in the [English README](README.md#screenshots).
 
 ---
 
+## 设计视角
+
+Argus 的设计遵循系统工程师的标准流程。
+
+### 功能设计 — 确定做什么
+
+确定需求为**常驻式时间追踪器**，并制定了以下设计方针：
+
+- 自动检测前台窗口并分类
+- 数据存储在 SQLite，本地保存
+- 一个 `argus tui` 同时启动仪表盘和追踪器
+- 登录时自启动，用户无感记录
+- 支持 6 种语言、12 套主题，覆盖广泛用户群
+
+### 需求定义
+
+| 需求 | 目标 |
+|---|---|
+| 窗口追踪 | 每 5 秒常驻记录 |
+| 空闲检测 | 无操作时跳过记录 |
+| 隐私优先 | 数据仅保存在本地 |
+| 轻量 | 典型桌面环境下 CPU 占用 < 1% |
+| 跨平台 | Windows / macOS / Linux |
+
+### 基本设计 — 三层架构
+
+```
+┌──────────────────────────────────────────────┐
+│  UI 层: TUI (Textual) + 报告 (Rich)          │
+├──────────────────────────────────────────────┤
+│  服务层: 追踪器、存储、报告                    │
+├──────────────────────────────────────────────┤
+│  平台层: Win32 / macOS / Linux               │
+└──────────────────────────────────────────────┘
+```
+
+### 详细设计 — 模块职责
+
+| 模块 | 职责 |
+|---|---|
+| `tracker.py` | 平台级窗口检测 + 空闲检测 |
+| `storage.py` | SQLite 初始化、`record()` 写入、`query_range()` 读取 |
+| `daemon.py` | 前台轮询循环（`start` 命令） |
+| `tui.py` | Textual 仪表盘 + 内嵌后台轮询器 |
+| `report.py` | 日报 / 周报 Rich 报告 + 状态面板 |
+| `autostart.py` | 各 OS 的开机自启动注册 |
+| `config.py` | 常量、分类映射、设置持久化 |
+| `i18n.py` | 界面字符串（6 种语言） |
+
+---
+
 ## Architecture diagrams
 
 The following [Mermaid](https://mermaid.js.org/) blocks render natively on GitHub. They document the module structure, key types, the tracking polling loop, and the `report` command call sequence.

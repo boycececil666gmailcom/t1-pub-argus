@@ -16,6 +16,57 @@ Live **TUI** on Windows (`argus tui`): status strip, today’s app and category 
 
 ---
 
+## Design rationale
+
+From a systems engineer's perspective, Argus follows the standard software design waterfall:
+
+### Feature Design — what we decided to build
+
+We identified the need for a **passive, always-on time tracker** that runs silently in the background. Core decisions:
+
+- Track the foreground window and categorise apps automatically
+- Store snapshots in SQLite for simplicity and portability
+- Run the tracker **inside the TUI process** so a single `argus tui` starts everything
+- Auto-start on login for frictionless tracking
+- Multi-language UI (6 languages) and 12 colour themes for broad accessibility
+
+### Requirements Definition
+
+| Requirement | Target |
+|---|---|
+| Track active windows | Every 5 seconds, silently |
+| Detect idle periods | Skip snapshots when the user is away |
+| Privacy-first | All data stays on the local machine |
+| Lightweight | < 1 % CPU on a typical desktop |
+| Cross-platform | Windows, macOS, Linux |
+
+### Basic Design — three layers
+
+```
+┌─────────────────────────────────────────────┐
+│  UI layer: TUI (Textual) + Reports (Rich)  │
+├─────────────────────────────────────────────┤
+│  Service layer: Tracker, Storage, Report    │
+├─────────────────────────────────────────────┤
+│  Platform layer: Win32 / macOS / Linux     │
+└─────────────────────────────────────────────┘
+```
+
+### Detailed Design — module responsibilities
+
+| Module | Responsibility |
+|---|---|
+| `tracker.py` | Platform-specific active window + idle detection |
+| `storage.py` | SQLite init, `record()` write, `query_range()` read |
+| `daemon.py` | Foreground polling loop (`start` command) |
+| `tui.py` | Textual dashboard + embedded background poller |
+| `report.py` | Daily / weekly Rich reports + status panel |
+| `autostart.py` | OS-specific login-item registration |
+| `config.py` | Constants, category map, settings persistence |
+| `i18n.py` | UI string catalogue (6 languages) |
+
+---
+
 ## Architecture diagrams
 
 The following [Mermaid](https://mermaid.js.org/) blocks render natively on GitHub. They document the module structure, key types, the tracking polling loop, and the `report` command call sequence.
