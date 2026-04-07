@@ -4,6 +4,8 @@
 
 > *Named after Argus Panoptes — the hundred-eyed giant of Greek mythology who never slept and watched everything.*
 
+> *A six-month solo project born from a simple question: where does my time actually go?*
+
 A Python tool that silently records which app and window you have active every 5 seconds. Run it in the background, then pull up a live dashboard or a rich terminal report to see exactly where your time goes.
 
 ## Screenshots
@@ -205,6 +207,39 @@ flowchart TD
     I --> C
     C -->|no / interrupt| J([Stop])
 ```
+
+---
+
+## Origin Story
+
+Six months ago, I hit a wall.
+
+I had just wrapped up a demanding period — full-time work, freelance projects, study — and one night I asked myself a deceptively simple question: **where did my time actually go?**
+
+I tried recall. I tried notes. Nothing stuck. The problem wasn't effort — it was invisibility. You can't improve what you can't measure, and time spent at a computer is notoriously hard to introspect after the fact.
+
+So I built Argus.
+
+Not as a chore tracker. Not as a Pomodoro timer. As a **passive, always-on mirror** that simply records what you do — every 5 seconds, no prompts, no friction — and then lets you look back and see the truth.
+
+### Why build it myself?
+
+I evaluated existing tools: RescueTime, ActivityWatch, Toggl. They're solid. But each had something I didn't want:
+
+- Cloud dependency — I wasn't comfortable sending all my window activity to a server
+- Subscription pricing — for something I wanted to run forever
+- Linux gaps — most didn't have first-class support
+- No TUI — I live in the terminal
+
+Argus is the tool I wanted: **local-only, cross-platform, zero-cost, and terminal-native.** It runs quietly in the background on Windows, macOS, or Linux. Data never leaves your machine. The TUI dashboard runs in Textual and refreshes live. Weekly reports surface patterns you wouldn't notice otherwise.
+
+### What I learned
+
+Half a year of solo development across a demanding schedule taught me something unexpected: **the constraint was the feature.** Building Argus in stolen hours — early mornings, weekends — meant I couldn't over-engineer. Every decision had to be justified. Simplicity became a philosophy, not a compromise.
+
+The result is a tool that I use every single day. And now it's open source.
+
+> If you've ever wondered where your time goes — [give it a try](https://github.com/boycececil666/t1-pub-argus).
 
 ---
 
