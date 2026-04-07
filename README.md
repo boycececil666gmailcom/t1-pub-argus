@@ -18,27 +18,61 @@ Live **TUI** on Windows (`argus tui`): status strip, today’s app and category 
 
 ## Design rationale
 
-From a systems engineer's perspective, Argus follows the standard software design waterfall:
+From a systems engineer's perspective, Argus follows a layered design process:
 
-### Feature Design — what we decided to build
+```
+Feature Design → Requirements Definition → Basic Design → Detailed Design
+```
 
-We identified the need for a **passive, always-on time tracker** that runs silently in the background. Core decisions:
+---
 
-- Track the foreground window and categorise apps automatically
-- Store snapshots in SQLite for simplicity and portability
-- Run the tracker **inside the TUI process** so a single `argus tui` starts everything
-- Auto-start on login for frictionless tracking
-- Multi-language UI (6 languages) and 12 colour themes for broad accessibility
+### Feature Design
+
+Features are split into two axes: **Functional** (what it does) and **Non-Functional / Quality Attributes** (how well it behaves).
+
+#### Functional features
+
+| # | Feature | Rationale |
+|---|---|---|
+| F1 | Track foreground window | Core value — passive, silent, always-on |
+| F2 | Auto-categorise apps | Turns raw process names into meaningful categories |
+| F3 | Store snapshots in SQLite | Simple, portable, zero-config, no server |
+| F4 | Run tracker inside TUI process | Single `argus tui` starts everything, no separate daemon |
+| F5 | Auto-start on login | Frictionless — tracking begins without user action |
+| F6 | Multi-language TUI (6 languages) | Accessibility for non-English speakers |
+| F7 | 12 colour themes | Personalisation without code changes |
+
+#### Non-functional features (quality attributes)
+
+| # | Quality | Target | Driven by |
+|---|---|---|---|
+| NF1 | **Privacy** — all data stays local | No network, no cloud, no telemetry | User trust |
+| NF2 | **Availability** — cross-platform | Windows, macOS, Linux | Platform diversity |
+| NF3 | **Performance** — lightweight | < 1 % CPU on a typical desktop | Always-on constraint |
+| NF4 | **Availability** — idle detection | Skip snapshots when user is away | Data cleanliness |
+| NF5 | **Performance** — low storage overhead | One row per 5-second snapshot | Long-term feasibility |
+| NF6 | **Maintainability** — modular design | Clear layer separation | Extensibility |
+
+---
 
 ### Requirements Definition
 
-| Requirement | Target |
-|---|---|
-| Track active windows | Every 5 seconds, silently |
-| Detect idle periods | Skip snapshots when the user is away |
-| Privacy-first | All data stays on the local machine |
-| Lightweight | < 1 % CPU on a typical desktop |
-| Cross-platform | Windows, macOS, Linux |
+Derived directly from the feature table above.
+
+| Requirement | Source | Target |
+|---|---|---|
+| Track active windows | F1 | Every 5 seconds, silently |
+| Detect and skip idle periods | F1 + NF4 | Exclude away-time from reports |
+| Categorise apps automatically | F2 | 11 built-in categories |
+| Persist all snapshots locally | F3 | SQLite in `~/.argus/` |
+| Single-process TUI with embedded tracker | F4 | No separate background service |
+| Auto-start on login | F5 | OS-specific registration |
+| Multi-language UI | F6 | 6 languages, saved to settings |
+| 12 colour themes | F7 | Press `T` to cycle |
+| Local-only, no network | NF1 | Privacy guarantee |
+| Cross-platform | NF2 | Win / macOS / Linux |
+| CPU under 1 % | NF3 | On typical desktop hardware |
+| Modular / extensible | NF6 | Separate layers and modules |
 
 ### Basic Design — three layers
 
