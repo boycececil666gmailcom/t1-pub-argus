@@ -1,3 +1,5 @@
+![Uploading 1.png…]()
+<img width="3200" height="1904" alt="2" src="https://github.com/user-attachments/assets/ca46859d-914b-446c-b3ac-b3915065eb2f" />
 # Argus
 
 **README languages:** English · [日本語](README.ja.md) · [中文](README.zh.md)
