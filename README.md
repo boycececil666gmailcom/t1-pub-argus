@@ -22,67 +22,44 @@ Live **TUI** on Windows (`argus tui`): status strip, today’s app and category 
 
 ## Design rationale
 
-Argus follows a layered design process:
-
 ```
-Feature Design → Requirements Definition → Basic System Design → Detailed System Design
+Requirements Definition → Basic System Design → Detailed System Design
 ```
-
----
-
-### Feature Design
-
-Features are split into two axes: **Functional** (what it does) and **Non-Functional / Quality Attributes** (how well it behaves).
-
-#### Functional features
-
-| # | Feature | Rationale |
-|---|---|---|
-| F1 | Track foreground window | Core value — passive, silent, always-on |
-| F2 | Auto-categorise apps | Turns raw process names into meaningful categories |
-| F3 | Store snapshots in SQLite | Simple, portable, zero-config, no server |
-| F4 | Run tracker inside TUI process | Single `argus tui` starts everything, no separate daemon |
-| F5 | Auto-start on login | Frictionless — tracking begins without user action |
-| F6 | Multi-language TUI (6 languages) | Accessibility for non-English speakers |
-| F7 | 12 colour themes | Personalisation without code changes |
-
-#### Non-functional features (quality attributes)
-
-| # | Quality | Target | Driven by |
-|---|---|---|---|
-| NF1 | **Privacy** — all data stays local | No network, no cloud, no telemetry | User trust |
-| NF2 | **Availability** — cross-platform | Windows, macOS, Linux | Platform diversity |
-| NF3 | **Performance** — lightweight | < 1 % CPU on a typical desktop | Always-on constraint |
-| NF4 | **Availability** — idle detection | Skip snapshots when user is away | Data cleanliness |
-| NF5 | **Performance** — low storage overhead | One row per 5-second snapshot | Long-term feasibility |
-| NF6 | **Maintainability** — modular design | Clear layer separation | Extensibility |
 
 ---
 
 ### Requirements Definition
 
-Derived directly from the feature table above.
+**Functional requirements** — what the system does.
 
-| Requirement | Source | Target |
+| # | Requirement | Target |
 |---|---|---|
-| Track active windows | F1 | Every 5 seconds, silently |
-| Detect and skip idle periods | F1 + NF4 | Exclude away-time from reports |
-| Categorise apps automatically | F2 | 11 built-in categories |
-| Persist all snapshots locally | F3 | SQLite in `~/.argus/` |
-| Single-process TUI with embedded tracker | F4 | No separate background service |
-| Auto-start on login | F5 | OS-specific registration |
-| Multi-language UI | F6 | 6 languages, saved to settings |
-| 12 colour themes | F7 | Press `T` to cycle |
-| Local-only, no network | NF1 | Privacy guarantee |
-| Cross-platform | NF2 | Win / macOS / Linux |
-| CPU under 1 % | NF3 | On typical desktop hardware |
-| Modular / extensible | NF6 | Separate layers and modules |
+| R1 | Track foreground window | Every 5 seconds, silently |
+| R2 | Auto-categorise apps | 11 built-in categories |
+| R3 | Store snapshots in SQLite | Simple, portable, zero-config, no server |
+| R4 | Run tracker inside TUI process | Single `argus tui` starts everything, no separate daemon |
+| R5 | Auto-start on login | OS-specific registration |
+| R6 | Multi-language TUI | 6 languages, saved to settings |
+| R7 | 12 colour themes | Press `T` to cycle |
+
+**Non-functional requirements** — how well the system behaves.
+
+| # | Requirement | Target |
+|---|---|---|
+| R8 | Privacy | All data stays local — no network, no telemetry |
+| R9 | Cross-platform | Windows, macOS, Linux |
+| R10 | Lightweight | < 1 % CPU on typical desktop hardware |
+| R11 | Idle detection | Skip snapshots when user is away |
+| R12 | Low storage overhead | One row per 5-second snapshot |
+| R13 | Modular / extensible | Clear layer separation |
+
+> **Feature table** — each requirement maps to a feature (F1–F7) or quality attribute (NF1–NF6). See the appendix at the bottom of this README.
 
 ---
 
 ### Basic System Design
 
-System uses a three-layer architecture:
+**Three-layer architecture:**
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -94,11 +71,51 @@ System uses a three-layer architecture:
 └─────────────────────────────────────────────┘
 ```
 
+**Project structure:**
+
+```
+src/
+├── main.py               # Typer CLI — thin entry point, delegates to argus/
+└── argus/
+    ├── __init__.py       # package version
+    ├── config.py         # constants, category map, settings persistence
+    ├── i18n.py           # UI string catalogue (6 languages)
+    ├── tracker.py        # active window + idle detection (Win / macOS / Linux)
+    ├── storage.py        # SQLite read/write
+    ├── daemon.py         # foreground polling loop (used by `start` command)
+    ├── report.py         # Rich daily/weekly/status reports
+    ├── tui.py            # Textual live dashboard
+    └── autostart.py      # login auto-start helpers (Win / macOS / Linux)
+build.py                  # PyInstaller build script → dist/argus[.exe]
+requirements.txt          # runtime dependencies
+requirements-dev.txt      # runtime + build tools (pyinstaller)
+dist/                     # compiled executables (git-ignored)
+```
+
+**Tech stack:**
+
+| Concern | Tool |
+|---|---|
+| Active window detection | `pywin32` (Windows) · `osascript` (macOS) · `xdotool` (Linux) |
+| Idle detection | `GetLastInputInfo` via ctypes (Windows) · `ioreg` (macOS) · `xprintidle` (Linux) |
+| Process info | `psutil` |
+| Storage | SQLite via stdlib `sqlite3` |
+| CLI | `Typer` |
+| Terminal reports | `Rich` |
+| Interactive dashboard | `Textual` |
+| Auto-start | Registry key (Windows) · LaunchAgent plist (macOS) · XDG autostart (Linux) |
+
+**App categories:**
+
+`Browser` · `IDE / Editor` · `Terminal` · `Communication` · `Design` · `Gaming` · `Productivity` · `Media` · `File Manager` · `System` · `Other`
+
+Edit `CATEGORIES` in `argus/config.py` to add or change mappings.
+
 ---
 
 ### Detailed System Design
 
-Module responsibilities:
+**Module responsibilities:**
 
 | Module | Responsibility |
 |---|---|
@@ -111,13 +128,28 @@ Module responsibilities:
 | `config.py` | Constants, category map, settings persistence |
 | `i18n.py` | UI string catalogue (6 languages) |
 
----
+**Data schema** — one row per 5-second snapshot in `~/.argus/argus.db` (override path with `ARGUS_DATA`):
 
-## Architecture diagrams
+| Column | Type | Description |
+|---|---|---|
+| `ts` | REAL | Unix timestamp |
+| `app_name` | TEXT | Process name (e.g. `chrome`, `code`) |
+| `window_title` | TEXT | Window title at that moment |
+| `exe_path` | TEXT | Full path to the executable |
+| `idle` | INTEGER | 1 if no input for longer than the idle threshold |
 
-The following [Mermaid](https://mermaid.js.org/) blocks render natively on GitHub. They document the module structure, key types, the tracking polling loop, and the `report` command call sequence.
+Idle snapshots are excluded from reports and the TUI by default. User preferences (language, theme) are stored separately in `~/.argus/settings.json`.
 
-### Sequence diagram — `report`
+**Tuning constants** in `argus/config.py`:
+
+```python
+POLL_INTERVAL  = 5    # seconds between snapshots
+IDLE_THRESHOLD  = 60   # seconds of no input before marking idle
+```
+
+**Architecture diagrams** (rendered via [Mermaid](https://mermaid.js.org/) on GitHub):
+
+*Sequence — `report` command:*
 
 ```mermaid
 sequenceDiagram
@@ -135,9 +167,7 @@ sequenceDiagram
     Rich-->>User: terminal output
 ```
 
-### Module structure
-
-High-level dependency flow: `main.py` delegates to each `argus/` module.
+*Module structure:*
 
 ```mermaid
 flowchart LR
@@ -174,9 +204,7 @@ flowchart LR
     storage --> config
 ```
 
-### Class diagram
-
-`WindowInfo` is the TypedDict snapshot shape returned by the tracker; TUI screens subclass Textual widgets.
+*Class diagram — `WindowInfo` TypedDict and TUI widget hierarchy:*
 
 ```mermaid
 classDiagram
@@ -199,9 +227,7 @@ classDiagram
     note for ModalScreen "textual.screen.ModalScreen"
 ```
 
-### Activity diagram — tracking loop
-
-Shared logic for the `start` / daemon and the TUI background poller: poll interval → idle check → record snapshot → wait → repeat.
+*Activity — tracking loop (shared by `start` and TUI background poller):*
 
 ```mermaid
 flowchart TD
@@ -352,52 +378,7 @@ Your theme choice is saved and restored automatically.
 
 ---
 
-## Data
-
-Everything is stored in `~/.argus/argus.db` (SQLite) by default (override the folder with env `ARGUS_DATA`). One row per 5-second snapshot:
-
-| Column | Type | Description |
-|---|---|---|
-| `ts` | REAL | Unix timestamp |
-| `app_name` | TEXT | Process name (e.g. `chrome`, `code`) |
-| `window_title` | TEXT | Window title at that moment |
-| `exe_path` | TEXT | Full path to the executable |
-| `idle` | INTEGER | 1 if no input for longer than the idle threshold |
-
-Idle snapshots are excluded from all reports and the TUI by default.
-
-User preferences (language, theme) are stored separately in `~/.argus/settings.json`.
-
----
-
-## Categories
-
-Apps are automatically bucketed into categories:
-
-`Browser` · `IDE / Editor` · `Terminal` · `Communication` · `Design` · `Gaming` · `Productivity` · `Media` · `File Manager` · `System` · `Other`
-
-To add or change mappings, edit the `CATEGORIES` dict in `argus/config.py`.
-
----
-
-## Stack
-
-| Concern | Tool |
-|---|---|
-| Active window detection | `pywin32` (Windows) · `osascript` (macOS) · `xdotool` (Linux) |
-| Idle detection | `GetLastInputInfo` via ctypes (Windows) · `ioreg` (macOS) · `xprintidle` (Linux) |
-| Process info | `psutil` |
-| Storage | SQLite via stdlib `sqlite3` |
-| CLI | `Typer` |
-| Terminal reports | `Rich` |
-| Interactive dashboard | `Textual` |
-| Auto-start | Registry key (Windows) · LaunchAgent plist (macOS) · XDG autostart (Linux) |
-
----
-
-## Setup & Building (for experienced users)
-
-> These sections are for developers who want to run from source or build their own executable.
+## Setup & Building
 
 ### Setup (development)
 
@@ -469,34 +450,29 @@ python src/main.py uninstall
 
 ---
 
-## Tuning
+## Appendix — Feature Reference
 
-Edit the two constants at the top of `argus/config.py`:
+Each requirement in the **Requirements Definition** maps to a **feature** (F1–F7) or **quality attribute** (NF1–NF6).
 
-```python
-POLL_INTERVAL  = 5    # seconds between snapshots
-IDLE_THRESHOLD = 60   # seconds of no input before a snapshot is marked idle
-```
+**Functional features:**
 
----
+| # | Feature | Rationale |
+|---|---|---|
+| F1 | Track foreground window | Core value — passive, silent, always-on |
+| F2 | Auto-categorise apps | Turns raw process names into meaningful categories |
+| F3 | Store snapshots in SQLite | Simple, portable, zero-config, no server |
+| F4 | Run tracker inside TUI process | Single `argus tui` starts everything, no separate daemon |
+| F5 | Auto-start on login | Frictionless — tracking begins without user action |
+| F6 | Multi-language TUI (6 languages) | Accessibility for non-English speakers |
+| F7 | 12 colour themes | Personalisation without code changes |
 
-## Project structure
+**Non-functional quality attributes:**
 
-```
-src/
-├── main.py               # Typer CLI — thin entry point, delegates to argus/
-└── argus/
-    ├── __init__.py       # package version
-    ├── config.py         # constants, category map, settings persistence
-    ├── i18n.py           # UI string catalogue (6 languages)
-    ├── tracker.py        # active window + idle detection (Win / macOS / Linux)
-    ├── storage.py        # SQLite read/write
-    ├── daemon.py         # foreground polling loop (used by `start` command)
-    ├── report.py         # Rich daily/weekly/status reports
-    ├── tui.py            # Textual live dashboard
-    └── autostart.py      # login auto-start helpers (Win / macOS / Linux)
-build.py                  # PyInstaller build script → dist/argus[.exe]
-requirements.txt          # runtime dependencies
-requirements-dev.txt      # runtime + build tools (pyinstaller)
-dist/                     # compiled executables (git-ignored)
-```
+| # | Quality | Driven by |
+|---|---|---|
+| NF1 | Privacy — all data stays local | User trust |
+| NF2 | Cross-platform availability | Platform diversity |
+| NF3 | Lightweight performance | Always-on constraint |
+| NF4 | Idle detection | Data cleanliness |
+| NF5 | Low storage overhead | Long-term feasibility |
+| NF6 | Modular / extensible | Future maintainability |

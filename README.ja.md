@@ -1,12 +1,13 @@
 # Argus
 
-**README の言語：** [English](README.md) · 日本語 · [中文](README.zh.md)
-
-> *ギリシャ神話の百眼の巨人アルゴス・パノプテスにちなんで命名。眠らず、すべてを見守り続けた。*
->
-> *シンプルな問いから始まった6ヶ月のソロプロジェクト：私の時間は何処へ向かっているのか？*
-
-5 秒ごとにアクティブなアプリとウィンドウを静かに記録する Python ツールです。バックグラウンドで動かしながら、ライブダッシュボードやターミナルレポートで自分の時間の使い方を把握できます。
+|
+|**README の言語：** [English](README.md) · 日本語 · [中文](README.zh.md)
+|
+|> *ギリシャ神話の百眼の巨人アルゴス・パノプテスにちなんで命名。眠らず、すべてを見守り続けた。*
+|
+|> *シンプルな問いから始まった6ヶ月のソロプロジェクト：私の時間は何処へ向かっているのか？*
+|
+|5 秒ごとにアクティブなアプリとウィンドウを静かに記録する Python ツールです。バックグラウンドで動かしながら、ライブダッシュボードやターミナルレポートで自分の時間の使い方を把握できます。
 
 ## Screenshots
 
@@ -14,98 +15,46 @@
 
 ---
 
-## Origin Story — 開発のきっかけ
-
-半年前のことでした。
-
-僕はちょうど —— フルタイムの仕事、フリーランスの案件、勉学 —— という過密な時期を終えたばかりでした。ある夜、自分にシンプルな問いを投げかけました：**自分の時間は何処へ向かっているのか？**
-
-記憶しようとした。试を開いてみた。うまくいかない。問題は努力ではなかった —— 見えないことこそが问题だった。改善しようにも測定できなければ、コンピュータでの作業時間を後から振り返ることはできない。
-
-そこで Argus を作りました。
-
-タスク管理ツールでも、ポモドーロタイマーでもありません。**受動的で、常時稼働する鏡**として、自分のしていることをただ記録し、後から真実を見られるようにしました。5秒ごとに、プロンプトなし、摩擦なしで。
-
-### なぜ自作したのか？
-
-既存のツールを検討しました：RescueTime、ActivityWatch、Toggl。どれも不错的ですが、それぞれに僕が求めたくないものがありました：
-
-- クラウド依存 —— すべてのウィンドウ活動をサーバーに送るのが気が進まなかった
-- サブスクリプション料金 —— 永久に動かし続けたいものに
-- Linuxのギャップ —— 大半が一流サポートを提供していなかった
-- TUIがない —— 僕はターミナルで暮らしている
-
-Argusは僕が欲しいと思ったツールです：**ローカル専用、クロスプラットフォーム、ゼロコスト、ターミナルネイティブ。** Windows、macOS、Linuxのいずれでもバックグラウンドで静かに動きます。データは決してあなたの機械から離れず、TUIダッシュボードはTextualで駆動され、リアルタイムで更新されます。週次レポートは今否则気づかないパターンを浮かび上がらせます。
-
-### 開発から学んだこと
-
-过半年のソロ開発は予期しない教训をもたらしました：**制約こそが機能だった。** 早朝や週末の隙間時間を 利用してArgusを構築神之，所以过酷な设计はできませんでした。すべての决定に正当化が必要。シンプルさは妥协ではなく哲学になりました。
-
-结果是。每天使うようになりました。そして今、OSSです。
-
-> 自分の時間が何処へ向かっているのか気になったことがあるなら —— [試してみてください](https://github.com/boycececil666/t1-pub-argus)。
-
----
-
 ## 設計の視点
 
-Argus の設計は段階的なプロセスに従っています：
-
 ```
-機能設計 → 要件定義 → システム基本設計 → システム詳細設計
+要件定義 → システム基本設計 → システム詳細設計
 ```
-
----
-
-### 機能設計
-
-機能は二つの軸に分類されます：**機能的要件**（何をするか）と**非機能的要件 / 品質属性**（どの程度 잘 하는지）。
-
-#### 機能的要件
-
-| # | 要件 | 根拠 |
-|---|---|---|
-| F1 | フォアグラウンドウィンドウを追跡 | コアバリュー — 常駐、静音、バックグラウンド |
-| F2 | アプリを自動分類 | 生プロセス名を意味あるカテゴリに変換 |
-| F3 | スナップショットを SQLite に保存 | シンプル、移植性ゼロ設定、サーバー不要 |
-| F4 | TUI プロセス内にトラッカーを内包 | `argus tui` 一発で起動、バックグラウンドサービス不要 |
-| F5 | ログイン時に自動起動 | ユーザー行動ゼロで記録開始 |
-| F6 | 6言語対応 TUI | 非英語話者へのアクセシビリティ |
-| F7 | 12 色のテーマ | コード変更なしでパーソナライズ |
-
-#### 非機能的要件（品質属性）
-
-| # | 品質 | 目標 | 動機 |
-|---|---|---|---|
-| NF1 | **プライバシー** — 全データローカル保存 | ネットワーク、クラウド、テレメトリなし | ユーザー信頼 |
-| NF2 | **可用性** — クロスプラットフォーム | Windows、macOS、Linux | プラットフォーム多様性 |
-| NF3 | **パフォーマンス** — 軽量 | 一般的なデスクトップで CPU 1% 未満 | 常駐制約 |
-| NF4 | **可用性** — アイドル検出 | ユーザーが離れている間のスナップショットをスキップ | データ品質 |
-| NF5 | **パフォーマンス** — 低ストレージオーバーヘッド | 5 秒間隔で 1 行 | 長期運用 가능성 |
-| NF6 | **保守性** — モジュラー設計 | 明確なレイヤー分離 | 拡張性 |
 
 ---
 
 ### 要件定義
 
-上の機能表から直接導出。
+**機能要件** — システムが做什么。
 
-| 要件 | 参照元 | 目標 |
+| # | 要件 | 目標 |
 |---|---|---|
-| フォアグラウンドウィンドウを追跡 | F1 | 5 秒間隔で常駐記録 |
-| アイドルを検出してスキップ | F1 + NF4 | 離席時間をレポートから除外 |
-| アプリを自動分類 | F2 | 11 の組み込みカテゴリ |
-| スナップショットをローカルに保存 | F3 | `~/.argus/` 内の SQLite |
-| TUI 内にトラッカーを内包 | F4 | バックグラウンドサービスなし |
-| ログイン時に自動起動 | F5 | OS 別の登録 |
-| 多言語 UI | F6 | 6 言語、設定に保存 |
-| 12 色のテーマ | F7 | `T` で切り替え |
-| ローカルのみ、ネットワークなし | NF1 | プライバシー保証 |
-| クロスプラットフォーム | NF2 | Win / macOS / Linux |
-| CPU 1% 未満 | NF3 | 一般的なデスクトップハードウェア |
-| モジュラー / 拡張可能 | NF6 | レイヤーとモジュールの分離 |
+| R1 | フォアグラウンドウィンドウを追跡 | 5 秒間隔で静かに記録 |
+| R2 | アプリを自動分類 | 11 の組み込みカテゴリ |
+| R3 | スナップショットを SQLite に保存 | シンプル、移植性、ゼロ設定、サーバー不要 |
+| R4 | TUI プロセス内にトラッカーを内包 | `argus tui` 一発で起動、バックグラウンドサービス不要 |
+| R5 | ログイン時に自動起動 | OS 別の登録 |
+| R6 | 多言語対応 TUI | 6 言語、設定に保存 |
+| R7 | 12 色のテーマ | `T` で切り替え |
 
-### システム基本設計 — 三層構造
+**非機能要件** — システムがどの程度 잘 하는지。
+
+| # | 要件 | 目標 |
+|---|---|---|
+| R8 | プライバシー | 全データローカル保存 — ネットワーク・テレメトリなし |
+| R9 | クロスプラットフォーム | Windows、macOS、Linux |
+| R10 | 軽量 | 典型デスクトップで CPU 1% 未満 |
+| R11 | アイドル検出 | ユーザーが離れている間のスナップショットをスキップ |
+| R12 | 低ストレージオーバーヘッド | 5 秒間隔で 1 行 |
+| R13 | モジュラー / 拡張可能 | 明確なレイヤー分離 |
+
+> **機能表** — 各要件は機能（F1–F7）または品質属性（NF1–NF6）にマップされています。下部の付録を参照してください。
+
+---
+
+### システム基本設計
+
+**三層アーキテクチャ：**
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -117,9 +66,51 @@ Argus の設計は段階的なプロセスに従っています：
 └──────────────────────────────────────────────┘
 ```
 
+**プロジェクト構成：**
+
+```
+src/
+├── main.py               # Typer CLI エントリポイント、argus/ に委譲
+└── argus/
+    ├── __init__.py       # パッケージバージョン
+    ├── config.py         # 定数・カテゴリマップ・設定永続化
+    ├── i18n.py           # UI 文字列カタログ（6 言語）
+    ├── tracker.py        # アクティブウィンドウ + アイドル検出（Win / macOS / Linux）
+    ├── storage.py        # SQLite 読み書き
+    ├── daemon.py         # フォアグラウンドポーリングループ（`start` コマンド）
+    ├── report.py         # Rich 日次 / 週次 / ステータスレポート
+    ├── tui.py            # Textual リアルタイムダッシュボード
+    └── autostart.py      # 自動起動ヘルパー（Win / macOS / Linux）
+build.py                  # PyInstaller ビルドスクリプト → dist/argus[.exe]
+requirements.txt          # ランタイム依存関係
+requirements-dev.txt     # ランタイム + ビルドツール（pyinstaller）
+dist/                    # コンパイル済み実行ファイル（.gitignore 済み）
+```
+
+**技術スタック：**
+
+| concern | ツール |
+|---|---|
+| アクティブウィンドウ検出 | `pywin32`（Windows）· `osascript`（macOS）· `xdotool`（Linux）|
+| アイドル検出 | `GetLastInputInfo` via ctypes（Windows）· `ioreg`（macOS）· `xprintidle`（Linux）|
+| プロセス情報 | `psutil` |
+| ストレージ | SQLite（標準ライブラリ `sqlite3`）|
+| CLI | `Typer` |
+| ターミナルレポート | `Rich` |
+| インタラクティブダッシュボード | `Textual` |
+| 自動起動 | レジストリキー（Windows）· LaunchAgent plist（macOS）· XDG autostart（Linux）|
+
+**アプリのカテゴリ：**
+
+`ブラウザ` · `IDE / エディタ` · `ターミナル` · `コミュニケーション` · `デザイン` · `ゲーム` · `生産性` · `メディア` · `ファイルマネージャー` · `システム` · `その他`
+
+マッピングを変更するには `argus/config.py` の `CATEGORIES` を編集してください。
+
 ---
 
-### システム詳細設計 — モジュールの役割
+### システム詳細設計
+
+**モジュールの責務：**
 
 | モジュール | 責務 |
 |---|---|
@@ -132,13 +123,28 @@ Argus の設計は段階的なプロセスに従っています：
 | `config.py` | 定数、カテゴリマップ、設定の永続化 |
 | `i18n.py` | UI 文字列カタログ（6 言語） |
 
----
+**データスキーマ** — `~/.argus/argus.db` に 5 秒ごとのスナップショットが 1 行（パスは `ARGUS_DATA` 環境変数で変更可）：
 
-## Architecture diagrams
+| カラム | 型 | 説明 |
+|---|---|---|
+| `ts` | REAL | Unix タイムスタンプ |
+| `app_name` | TEXT | プロセス名（例：`chrome`、`code`）|
+| `window_title` | TEXT | その時点のウィンドウタイトル |
+| `exe_path` | TEXT | 実行ファイルのフルパス |
+| `idle` | INTEGER | アイドルしきい値を超えた場合 1 |
 
-The following [Mermaid](https://mermaid.js.org/) blocks render natively on GitHub. They document the module structure, key types, the tracking polling loop, and the `report` command call sequence.
+アイドルのスナップショットはレポートと TUI でデフォルト除外されます。ユーザー設定（言語、テーマ）は `~/.argus/settings.json` に別途保存されます。
 
-### Sequence diagram — `report`
+**設定定数** `argus/config.py` 内：
+
+```python
+POLL_INTERVAL  = 5    # スナップショットの間隔（秒）
+IDLE_THRESHOLD  = 60   # アイドルとみなす無操作時間（秒）
+```
+
+**アーキテクチャ図**（[Mermaid](https://mermaid.js.org/) — GitHub で自動描画）：
+
+*シーケンス — `report` コマンド：*
 
 ```mermaid
 sequenceDiagram
@@ -156,9 +162,7 @@ sequenceDiagram
     Rich-->>User: terminal output
 ```
 
-### Module structure
-
-High-level dependency flow: `main.py` delegates to each `argus/` module.
+*モジュール構造：*
 
 ```mermaid
 flowchart LR
@@ -195,9 +199,7 @@ flowchart LR
     storage --> config
 ```
 
-### Class diagram
-
-`WindowInfo` is the TypedDict snapshot shape returned by the tracker; TUI screens subclass Textual widgets.
+*クラス図 — `WindowInfo` TypedDict と TUI ウィジェット階層：*
 
 ```mermaid
 classDiagram
@@ -220,9 +222,7 @@ classDiagram
     note for ModalScreen "textual.screen.ModalScreen"
 ```
 
-### Activity diagram — tracking loop
-
-Shared logic for the `start` / daemon and the TUI background poller: poll interval → idle check → record snapshot → wait → repeat.
+*アクティビティ — トラッキングループ（`start` と TUI バックグラウンドポーラーで共有）：*
 
 ```mermaid
 flowchart TD
@@ -241,36 +241,152 @@ flowchart TD
 
 ---
 
-## 技術スタック
+## Origin Story — 開発のきっかけ
 
-| 機能 | ツール |
-|---|---|
-| アクティブウィンドウ検出 | `pywin32`（Windows）· `osascript`（macOS）· `xdotool`（Linux）|
-| アイドル検出 | `GetLastInputInfo` via ctypes（Windows）· `ioreg`（macOS）· `xprintidle`（Linux）|
-| プロセス情報 | `psutil` |
-| ストレージ | SQLite（標準ライブラリ `sqlite3`）|
-| CLI | `Typer` |
-| ターミナルレポート | `Rich` |
-| インタラクティブダッシュボード | `Textual` |
-| 自動起動 | レジストリキー（Windows）· LaunchAgent plist（macOS）· XDG autostart（Linux）|
+半年前のことでした。
+
+僕はちょうど —— フルタイムの仕事、フリーランスの案件、勉学 —— という過密な時期を終えたばかりでした。ある夜、自分にシンプルな問いを投げかけました：**自分の時間は何処へ向かっているのか？**
+
+記憶しようとした。试を開いてみた。うまくいかない。問題は努力ではなかった —— 見えないことこそが问题だった。改善しようにも測定できなければ、コンピュータでの作業時間を後から振り返ることはできない。
+
+そこで Argus を作りました。
+
+タスク管理ツールでも、ポモドーロタイマーでもありません。**受動的で、常時稼働する鏡**として、自分のしていることをただ記録し、後から真実を見られるようにしました。5秒ごとに、プロンプトなし、摩擦なしで。
+
+### なぜ自作したのか？
+
+既存のツールを検討しました：RescueTime、ActivityWatch、Toggl。どれも不错的ですが、それぞれに僕が求めたくないものがありました：
+
+- クラウド依存 —— すべてのウィンドウ活動をサーバーに送るのが気が進まなかった
+- サブスクリプション料金 —— 永久に動かし続けたいものに
+- Linuxのギャップ —— 大半が一流サポートを提供していなかった
+- TUIがない —— 僕はターミナルで暮らしている
+
+Argusは僕が欲しいと思ったツールです：**ローカル専用、クロスプラットフォーム、ゼロコスト、ターミナルネイティブ。** Windows、macOS、Linuxのいずれでもバックグラウンドで静かに動きます。データは決してあなたの機械から離れず、TUIダッシュボードはTextualで駆動され、リアルタイムで更新されます。週次レポートは今否则気づかないパターンを浮かび上がらせます。
+
+### 開発から学んだこと
+
+过半年のソロ開発は予期しない教训をもたらしました：**制約こそが機能だった。** 早朝や週末の隙間時間を 利用してArgusを構築神之，所以过酷な设计はできませんでした。すべての决定に正当化が必要。シンプルさは妥协ではなく哲学になりました。
+
+结果是。每天使うようになりました。そして今、OSSです。
+
+> 自分の時間が何処へ向かっているのか気になったことがあるなら —— [試してみてください](https://github.com/boycececil666/t1-pub-argus)。
 
 ---
 
-## 開発環境のセットアップ
+## Quickstart
+
+### Windows
+
+```bash
+# Download dist/argus.exe and run
+argus.exe tui
+```
+
+### macOS
+
+```bash
+# Download dist/argus and run
+./argus tui
+```
+
+### Linux
+
+```bash
+# Install system dependencies first
+sudo apt install xdotool xprintidle   # Ubuntu / Debian
+sudo dnf install xdotool xprintidle   # Fedora
+
+# Download dist/argus and run
+./argus tui
+```
+
+### 次にやること
+
+```bash
+# View today's activity report
+argus tui        # Interactive dashboard (recommended)
+argus report     # Text report in terminal
+
+# View specific day
+argus report --date 2026-04-05
+
+# View this week's report
+argus week
+
+# Check what you're doing right now
+argus status
+
+# Auto-start on login
+argus install    # Enable auto-start
+argus uninstall  # Disable auto-start
+```
+
+---
+
+## Keyboard shortcuts (TUI)
+
+| キー | 動作 |
+|---|---|
+| `R` | 全データを今すぐ更新 |
+| `T` | カラーテーマを切り替え |
+| `L` | 表示言語を切り替え（6 言語）|
+| `A` | 自動起動の切り替え |
+| `O` | データフォルダを開く |
+| `[` `]` | 前日 / 翌日 |
+| `{` `}` | 前週 / 翌週 |
+| `Q` | 終了 |
+
+---
+
+## TUI ダッシュボード
+
+`argus tui` を実行すると [Textual](https://textual.textualize.io/) による全画面リアルタイムダッシュボードが開きます。トラッカーもバックグラウンドで同時起動するため、別途 `start` は不要です。
+
+**表示内容**
+
+- **ステータスパネル** — アクティブなアプリ・カテゴリ・ウィンドウタイトル・アイドル時間・スナップショット総数
+- **今日** — 上位 10 アプリとカテゴリ内訳（プログレスバー付き）
+- **今週** — 日別サマリー・週次カテゴリ分布・週次上位アプリ
+
+5 秒ごとに自動更新されます。
+
+---
+
+## 言語サポート
+
+TUI は 6 言語に対応しており、`L` で順番に切り替えられます：
+
+`en` (English) · `ja` (日本語) · `zh` (中文) · `fr` (Français) · `de` (Deutsch) · `es` (Español)
+
+言語の選択は `~/.argus/settings.json` に保存され、次回起動時に復元されます。
+
+---
+
+## テーマ
+
+TUI で `T` を押すと 12 種類の内蔵 Textual テーマを順番に切り替えられます：
+
+`textual-dark` · `textual-light` · `nord` · `gruvbox` · `catppuccin-mocha` · `catppuccin-latte` · `dracula` · `tokyo-night` · `monokai` · `solarized-dark` · `solarized-light` · `flexoki`
+
+テーマの選択も自動的に保存・復元されます。
+
+---
+
+## セットアップ & ビルド
 
 ```bash
 pip install -r requirements.txt
 ```
 
 **Linux のみ** — ウィンドウ・アイドル検出に必要なシステムパッケージ：
+
 ```bash
 sudo apt install xdotool xprintidle   # Ubuntu / Debian
 sudo dnf install xdotool xprintidle   # Fedora
 ```
 
----
-
-## スタンドアロン実行ファイルのビルド
+### スタンドアロン実行ファイルのビルド
 
 Python や pip を一切インストールせずに使える単一ファイルにパッケージングします。
 
@@ -297,9 +413,7 @@ python build.py
 > sudo apt install xdotool xprintidle
 > ```
 
----
-
-## 使い方（ソースから実行）
+### 使い方（ソースから実行）
 
 ```bash
 # インタラクティブダッシュボード（推奨——バックグラウンドでトラッカーも起動）
@@ -327,136 +441,31 @@ python src/main.py install
 python src/main.py uninstall
 ```
 
-### ビルド済み実行ファイルの使い方
-
-```bash
-argus tui
-argus report
-argus install
-# 同じコマンド — "python src/main.py" プレフィックス不要
-```
-
 ---
 
-## TUI ダッシュボード
+## 付録 — 機能リファレンス
 
-`argus tui` を実行すると [Textual](https://textual.textualize.io/) による全画面リアルタイムダッシュボードが開きます。トラッカーもバックグラウンドで同時起動するため、別途 `start` は不要です。
+上の**要件定義**の各要件は、**機能**（F1–F7）または**品質属性**（NF1–NF6）にマップされています。
 
-**表示内容**
+**機能的機能：**
 
-- **ステータスパネル** — アクティブなアプリ・カテゴリ・ウィンドウタイトル・アイドル時間・スナップショット総数
-- **今日** — 上位 10 アプリとカテゴリ内訳（プログレスバー付き）。◀ ▶ と「今日」で別の日へ
-- **今週** — 日別サマリー・週次カテゴリ分布・週次上位アプリ。◀ ▶ と「今週」で別の週へ
-
-5 秒ごとに自動更新されます。「今日」「今週」表示中は実カレンダーに追従（日付変更後も今日・今週のまま）。
-
-**キーボードショートカット**
-
-| キー | 動作 |
-|---|---|
-| `?` | ヘルプ画面 |
-| `R` | 全データを今すぐ更新 |
-| `T` | カラーテーマを切り替え |
-| `L` | 表示言語を切り替え |
-| `A` | 自動起動の切り替え（有効 / 無効）|
-| `O` | データフォルダをファイルマネージャーで開く |
-| `[` `]` | 前日 / 翌日（ダッシュボード履歴） |
-| `{` `}` | 前週 / 翌週（ダッシュボード履歴） |
-| `Q` | 終了 |
-
-**ツールバーボタン**
-
-| ボタン | 動作 |
-|---|---|
-| `自動起動  ON/OFF` | ログイン自動起動の切り替え |
-| `JA  日本語` | 言語の切り替え |
-| `DBフォルダを開く` | データフォルダを開く |
-
----
-
-## 言語サポート
-
-TUI は 6 言語に対応しており、`L` で順番に切り替えられます：
-
-| コード | 言語 |
-|---|---|
-| `en` | English |
-| `ja` | 日本語 |
-| `zh` | 中文 |
-| `fr` | Français |
-| `de` | Deutsch |
-| `es` | Español |
-
-言語の選択は `~/.argus/settings.json` に保存され、次回起動時に復元されます。
-
----
-
-## テーマ
-
-TUI で `T` を押すと 12 種類の内蔵 Textual テーマを順番に切り替えられます（追加インストール不要）：
-
-`textual-dark` · `textual-light` · `nord` · `gruvbox` · `catppuccin-mocha` · `catppuccin-latte` · `dracula` · `tokyo-night` · `monokai` · `solarized-dark` · `solarized-light` · `flexoki`
-
-テーマの選択も自動的に保存・復元されます。
-
----
-
-## データ
-
-すべてのデータは `~/.argus/argus.db`（SQLite）に保存されます（フォルダは環境変数 `ARGUS_DATA` で変更可）。5 秒ごとのスナップショットが 1 行：
-
-| カラム | 型 | 説明 |
+| # | 機能 | 根拠 |
 |---|---|---|
-| `ts` | REAL | Unix タイムスタンプ |
-| `app_name` | TEXT | プロセス名（例：`chrome`、`code`）|
-| `window_title` | TEXT | その時点のウィンドウタイトル |
-| `exe_path` | TEXT | 実行ファイルのフルパス |
-| `idle` | INTEGER | アイドルしきい値を超えた場合 1 |
+| F1 | フォアグラウンドウィンドウを追跡 | コアバリュー — 常駐、静音、バックグラウンド |
+| F2 | アプリを自動分類 | 生プロセス名を意味あるカテゴリに変換 |
+| F3 | スナップショットを SQLite に保存 | シンプル、移植性、ゼロ設定、サーバー不要 |
+| F4 | TUI プロセス内にトラッカーを内包 | `argus tui` 一発で起動、バックグラウンドサービス不要 |
+| F5 | ログイン時に自動起動 | ユーザー行動ゼロで記録開始 |
+| F6 | 多言語対応 TUI（6 言語） | 非英語話者へのアクセシビリティ |
+| F7 | 12 色のテーマ | コード変更なしでパーソナライズ |
 
-アイドルのスナップショットはレポートと TUI でデフォルト除外されます。
+**非機能的品質属性：**
 
-ユーザー設定（言語、テーマ）は `~/.argus/settings.json` に別途保存されます。
-
----
-
-## カテゴリ
-
-アプリは自動的に以下のカテゴリに分類されます：
-
-`ブラウザ` · `IDE / エディタ` · `ターミナル` · `コミュニケーション` · `デザイン` · `ゲーム` · `生産性` · `メディア` · `ファイルマネージャー` · `システム` · `その他`
-
-マッピングを変更するには `src/argus/config.py` の `CATEGORIES` 辞書を編集してください。
-
----
-
-## 設定調整
-
-`src/argus/config.py` 上部の 2 つの定数を編集：
-
-```python
-POLL_INTERVAL  = 5    # スナップショットの間隔（秒）
-IDLE_THRESHOLD = 60   # アイドルとみなす無操作時間（秒）
-```
-
----
-
-## プロジェクト構成
-
-```
-src/
-├── main.py               # Typer CLI エントリポイント
-└── argus/
-    ├── __init__.py       # パッケージバージョン
-    ├── config.py         # 定数・カテゴリマップ・設定永続化
-    ├── i18n.py           # UI 文字列カタログ（6 言語）
-    ├── tracker.py        # アクティブウィンドウ + アイドル検出
-    ├── storage.py        # SQLite 読み書き
-    ├── daemon.py         # フォアグラウンドポーリングループ
-    ├── report.py         # Rich 日次 / 週次 / ステータスレポート
-    ├── tui.py            # Textual リアルタイムダッシュボード
-    └── autostart.py      # 自動起動ヘルパー（Win / macOS / Linux）
-build.py                  # PyInstaller ビルドスクリプト → dist/argus[.exe]
-requirements.txt          # ランタイム依存関係
-requirements-dev.txt     # ランタイム + ビルドツール（pyinstaller）
-dist/                    # コンパイル済み実行ファイル（.gitignore 済み）
-```
+| # | 品質 | 駆動要因 |
+|---|---|---|
+| NF1 | プライバシー — 全データローカル保存 | ユーザー信頼 |
+| NF2 | クロスプラットフォーム可用性 | プラットフォーム多様性 |
+| NF3 | 軽量なパフォーマンス | 常駐制約 |
+| NF4 | アイドル検出 | データ品質 |
+| NF5 | 低ストレージオーバーヘッド | 長期運用可能性 |
+| NF6 | モジュラー / 拡張可能 | 将来の設計変更 |
