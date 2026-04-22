@@ -10,7 +10,7 @@ A Python tool that silently records which app and window you have active every 5
 
 ## Screenshots
 
-Live **TUI** on Windows (`argus tui`): status strip, today’s app and category breakdown with bars, and the weekly table. Left: **Gruvbox**; right: another built-in dark theme (teal palette). Press `T` to cycle themes.
+Live **TUI** on Windows (`argus tui`): status strip, today's app and category breakdown with bars, and the weekly table. Left: **Gruvbox**; right: another built-in dark theme (teal palette). Press `T` to cycle themes.
 <img width="3200" height="1904" alt="1" src="https://github.com/user-attachments/assets/017a3611-0ecd-49d2-bc9e-56a6133ec6ed" />
 <img width="3200" height="1904" alt="2" src="https://github.com/user-attachments/assets/db1c7762-a1f4-4823-928c-ba378c52d601" />
 
@@ -190,6 +190,41 @@ POLL_INTERVAL  = 5    # seconds between snapshots
 IDLE_THRESHOLD  = 60   # seconds of no input before marking idle
 ```
 
+**TUI — Keyboard shortcuts:**
+
+| Key | Action |
+|---|
+| `R` | Refresh data immediately |
+| `T` | Cycle through colour themes |
+| `L` | Cycle through UI languages (6 languages) |
+| `A` | Toggle Auto Start |
+| `O` | Open the data folder |
+| `[` `]` | Previous / next day |
+| `{` `}` | Previous / next week |
+| `Q` | Quit |
+
+`argus tui` opens a live full-terminal dashboard powered by [Textual](https://textual.textualize.io/). It also runs the tracker in the background — no separate `start` command needed.
+
+**What it shows:**
+
+- **Status panel** — active app, category, window title, idle time, and total snapshot count
+- **Today** — top 10 apps and category breakdown with progress bars
+- **This Week** — day-by-day summary table plus weekly top apps and categories
+
+Everything auto-refreshes every 5 seconds.
+
+The TUI supports 6 languages, cycled with `L`:
+
+`en` (English) · `ja` (日本語) · `zh` (中文) · `fr` (Français) · `de` (Deutsch) · `es` (Español)
+
+Your language choice is saved to `~/.argus/settings.json` and restored on next launch.
+
+Press `T` in the TUI to cycle through all 12 built-in Textual themes:
+
+`textual-dark` · `textual-light` · `nord` · `gruvbox` · `catppuccin-mocha` · `catppuccin-latte` · `dracula` · `tokyo-night` · `monokai` · `solarized-dark` · `solarized-light` · `flexoki`
+
+Your theme choice is saved and restored automatically.
+
 ---
 
 ## Origin Story
@@ -275,150 +310,29 @@ argus uninstall  # Disable auto-start
 
 ---
 
-## Keyboard shortcuts (TUI)
-
-| Key | Action |
-|---|---|
-| `R` | Refresh data immediately |
-| `T` | Cycle through colour themes |
-| `L` | Cycle through UI languages (6 languages) |
-| `A` | Toggle Auto Start |
-| `O` | Open the data folder |
-| `[` `]` | Previous / next day |
-| `{` `}` | Previous / next week |
-| `Q` | Quit |
-
----
-
-## TUI dashboard
-
-`argus tui` opens a live full-terminal dashboard powered by [Textual](https://textual.textualize.io/). It also runs the tracker in the background — no separate `start` command needed.
-
-**What it shows**
-
-- **Status panel** — active app, category, window title, idle time, and total snapshot count
-- **Today** — top 10 apps and category breakdown with progress bars
-- **This Week** — day-by-day summary table plus weekly top apps and categories
-
-Everything auto-refreshes every 5 seconds.
-
----
-
-## Languages
-
-The TUI supports 6 languages, cycled with `L`:
-
-`en` (English) · `ja` (日本語) · `zh` (中文) · `fr` (Français) · `de` (Deutsch) · `es` (Español)
-
-Your language choice is saved to `~/.argus/settings.json` and restored on next launch.
-
----
-
-## Themes
-
-Press `T` in the TUI to cycle through all 12 built-in Textual themes:
-
-`textual-dark` · `textual-light` · `nord` · `gruvbox` · `catppuccin-mocha` · `catppuccin-latte` · `dracula` · `tokyo-night` · `monokai` · `solarized-dark` · `solarized-light` · `flexoki`
-
-Your theme choice is saved and restored automatically.
-
----
-
-## Setup & Building
-
-### Setup (development)
-
-```bash
-pip install -r requirements.txt
-```
-
-**Linux only** — install two extra system packages for window and idle detection:
-
-```bash
-sudo apt install xdotool xprintidle   # Ubuntu / Debian
-sudo dnf install xdotool xprintidle   # Fedora
-```
-
-### Building a standalone executable
-
-Packages Argus into a single file that end users can run with no Python or pip required.
-
-```bash
-# Install build tools (one-time)
-pip install -r requirements-dev.txt
-
-# Build
-python build.py
-```
-
-Output lands in `dist/`:
-
-| Platform | File |
-|---|---|
-| Windows | `dist/argus.exe` |
-| Linux | `dist/argus` |
-| macOS | `dist/argus` |
-
-The executable is fully self-contained — Python, Textual, Rich, and all other dependencies are bundled inside it. **End users need to install nothing.**
-
-> **Linux note:** `xdotool` and `xprintidle` are system packages that cannot be bundled. Include the following in any Linux distribution:
-> ```bash
-> sudo apt install xdotool xprintidle
-> ```
-
-### Usage (from source)
-
-```bash
-# Interactive dashboard (recommended — also runs the tracker in the background)
-python src/main.py tui
-
-# Start the tracker alone in the foreground (Ctrl+C to stop)
-python src/main.py start
-
-# Today's activity report
-python src/main.py report
-
-# Report for a specific day
-python src/main.py report --date 2026-03-15
-
-# This week's report
-python src/main.py week
-
-# What are you doing right now?
-python src/main.py status
-
-# Register Argus to launch automatically at login
-python src/main.py install
-
-# Remove from auto-start
-python src/main.py uninstall
-```
-
----
-
 ## Appendix — Feature Reference
 
-Each requirement in the **Requirements Definition** maps to a **feature** (F1–F7) or **quality attribute** (NF1–NF6).
+The **Requirements Definition** above maps each requirement to a **feature** (F1–F7) or **quality attribute** (NF1–NF6).
 
 **Functional features:**
 
 | # | Feature | Rationale |
 |---|---|---|
-| F1 | Track foreground window | Core value — passive, silent, always-on |
-| F2 | Auto-categorise apps | Turns raw process names into meaningful categories |
-| F3 | Store snapshots in SQLite | Simple, portable, zero-config, no server |
-| F4 | Run tracker inside TUI process | Single `argus tui` starts everything, no separate daemon |
-| F5 | Auto-start on login | Frictionless — tracking begins without user action |
+| F1 | Track foreground window | Core value — persistent, silent, background operation |
+| F2 | Auto-categorise apps | Converts raw process names into meaningful categories |
+| F3 | Snapshot storage in SQLite | Simple, portable, zero-config, no server |
+| F4 | Tracker runs inside TUI process | Single `argus tui` starts everything, no separate daemon |
+| F5 | Auto-start on login | Zero-friction — starts recording without user action |
 | F6 | Multi-language TUI (6 languages) | Accessibility for non-English speakers |
 | F7 | 12 colour themes | Personalisation without code changes |
 
 **Non-functional quality attributes:**
 
-| # | Quality | Driven by |
+| # | Quality | Driver |
 |---|---|---|
 | NF1 | Privacy — all data stays local | User trust |
 | NF2 | Cross-platform availability | Platform diversity |
 | NF3 | Lightweight performance | Always-on constraint |
-| NF4 | Idle detection | Data cleanliness |
-| NF5 | Low storage overhead | Long-term feasibility |
-| NF6 | Modular / extensible | Future maintainability |
+| NF4 | Idle detection | Data quality |
+| NF5 | Low storage overhead | Long-term viability |
+| NF6 | Modular / extensible | Future-proof design |

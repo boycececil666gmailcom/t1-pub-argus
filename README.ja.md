@@ -1,13 +1,10 @@
-# Argus
+﻿# Argus
 
-|
-|**README の言語：** [English](README.md) · 日本語 · [中文](README.zh.md)
-|
-|> *ギリシャ神話の百眼の巨人アルゴス・パノプテスにちなんで命名。眠らず、すべてを見守り続けた。*
-|
-|> *シンプルな問いから始まった6ヶ月のソロプロジェクト：私の時間は何処へ向かっているのか？*
-|
-|5 秒ごとにアクティブなアプリとウィンドウを静かに記録する Python ツールです。バックグラウンドで動かしながら、ライブダッシュボードやターミナルレポートで自分の時間の使い方を把握できます。
+**README の言語：** [English](README.md) · 日本語 · [中文](README.zh.md)
+
+> *ギリシャ神話の百眼の巨人アルゴス・パノプテスにちなんで命名。眠らず、すべてを見守り続けた。*
+
+> *シンプルな問いから始まった6ヶ月のソロプロジェクト：私の時間は何処へ向かっているのか？*
 
 ## Screenshots
 
@@ -162,47 +159,6 @@ flowchart TD
     C -->|no / interrupt| J([Stop])
 ```
 
-*シーケンス — `report` コマンド：*
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant CLI as main.py
-    participant Report as report.py
-    participant Storage as storage.py
-    participant Rich as Rich console
-    User->>CLI: report optional date
-    CLI->>Report: daily_report(datetime)
-    Report->>Storage: query_range(start, end)
-    Storage-->>Report: snapshot rows
-    Report->>Report: aggregate and categorise
-    Report->>Rich: tables and panels
-    Rich-->>User: terminal output
-```
-
-*クラス図 — `WindowInfo` TypedDict と TUI ウィジェット階層：*
-
-```mermaid
-classDiagram
-    direction TB
-    class App
-    class Static
-    class ModalScreen
-    App <|-- ArgusApp
-    Static <|-- StatusWidget
-    ModalScreen <|-- HelpScreen
-    ModalScreen <|-- WelcomeScreen
-    class WindowInfo {
-        <<TypedDict>>
-        app_name
-        window_title
-        exe_path
-    }
-    note for App "textual.app.App"
-    note for Static "textual.widgets.Static"
-    note for ModalScreen "textual.screen.ModalScreen"
-```
-
 ---
 
 ### システム詳細設計
@@ -225,6 +181,41 @@ classDiagram
 POLL_INTERVAL  = 5    # スナップショットの間隔（秒）
 IDLE_THRESHOLD  = 60   # アイドルとみなす無操作時間（秒）
 ```
+
+**TUI — キーボードショートカット：**
+
+| キー | 動作 |
+|---|
+| `R` | 全データを今すぐ更新 |
+| `T` | カラーテーマを切り替え |
+| `L` | 表示言語を切り替え（6 言語）|
+| `A` | 自動起動の切り替え |
+| `O` | データフォルダを開く |
+| `[` `]` | 前日 / 翌日 |
+| `{` `}` | 前週 / 翌週 |
+| `Q` | 終了 |
+
+`argus tui` を実行すると [Textual](https://textual.textualize.io/) による全画面リアルタイムダッシュボードが開きます。トラッカーもバックグラウンドで同時起動するため、別途 `start` は不要です。
+
+**表示内容**
+
+- **ステータスパネル** — アクティブなアプリ・カテゴリ・ウィンドウタイトル・アイドル時間・スナップショット総数
+- **今日** — 上位 10 アプリとカテゴリ内訳（プログレスバー付き）
+- **今週** — 日別サマリー・週次カテゴリ分布・週次上位アプリ
+
+5 秒ごとに自動更新されます。
+
+TUI は 6 言語に対応しており、`L` で順番に切り替えられます：
+
+`en` (English) · `ja` (日本語) · `zh` (中文) · `fr` (Français) · `de` (Deutsch) · `es` (Español)
+
+言語の選択は `~/.argus/settings.json` に保存され、次回起動時に復元されます。
+
+TUI で `T` を押すと 12 種類の内蔵 Textual テーマを順番に切り替えられます：
+
+`textual-dark` · `textual-light` · `nord` · `gruvbox` · `catppuccin-mocha` · `catppuccin-latte` · `dracula` · `tokyo-night` · `monokai` · `solarized-dark` · `solarized-light` · `flexoki`
+
+テーマの選択も自動的に保存・復元されます。
 
 ---
 
@@ -311,125 +302,6 @@ argus uninstall  # Disable auto-start
 
 ---
 
-## Keyboard shortcuts (TUI)
-
-| キー | 動作 |
-|---|---|
-| `R` | 全データを今すぐ更新 |
-| `T` | カラーテーマを切り替え |
-| `L` | 表示言語を切り替え（6 言語）|
-| `A` | 自動起動の切り替え |
-| `O` | データフォルダを開く |
-| `[` `]` | 前日 / 翌日 |
-| `{` `}` | 前週 / 翌週 |
-| `Q` | 終了 |
-
----
-
-## TUI ダッシュボード
-
-`argus tui` を実行すると [Textual](https://textual.textualize.io/) による全画面リアルタイムダッシュボードが開きます。トラッカーもバックグラウンドで同時起動するため、別途 `start` は不要です。
-
-**表示内容**
-
-- **ステータスパネル** — アクティブなアプリ・カテゴリ・ウィンドウタイトル・アイドル時間・スナップショット総数
-- **今日** — 上位 10 アプリとカテゴリ内訳（プログレスバー付き）
-- **今週** — 日別サマリー・週次カテゴリ分布・週次上位アプリ
-
-5 秒ごとに自動更新されます。
-
----
-
-## 言語サポート
-
-TUI は 6 言語に対応しており、`L` で順番に切り替えられます：
-
-`en` (English) · `ja` (日本語) · `zh` (中文) · `fr` (Français) · `de` (Deutsch) · `es` (Español)
-
-言語の選択は `~/.argus/settings.json` に保存され、次回起動時に復元されます。
-
----
-
-## テーマ
-
-TUI で `T` を押すと 12 種類の内蔵 Textual テーマを順番に切り替えられます：
-
-`textual-dark` · `textual-light` · `nord` · `gruvbox` · `catppuccin-mocha` · `catppuccin-latte` · `dracula` · `tokyo-night` · `monokai` · `solarized-dark` · `solarized-light` · `flexoki`
-
-テーマの選択も自動的に保存・復元されます。
-
----
-
-## セットアップ & ビルド
-
-```bash
-pip install -r requirements.txt
-```
-
-**Linux のみ** — ウィンドウ・アイドル検出に必要なシステムパッケージ：
-
-```bash
-sudo apt install xdotool xprintidle   # Ubuntu / Debian
-sudo dnf install xdotool xprintidle   # Fedora
-```
-
-### スタンドアロン実行ファイルのビルド
-
-Python や pip を一切インストールせずに使える単一ファイルにパッケージングします。
-
-```bash
-# ビルドツールのインストール（初回のみ）
-pip install -r requirements-dev.txt
-
-# ビルド
-python build.py
-```
-
-出力は `dist/` ディレクトリに：
-
-| プラットフォーム | ファイル |
-|---|---|
-| Windows | `dist/argus.exe` |
-| Linux | `dist/argus` |
-| macOS | `dist/argus` |
-
-実行ファイルは完全に自己完結しています。Python・Textual・Rich などすべての依存関係を内包。**ユーザーは何もインストール不要です。**
-
-> **Linux の注意：** `xdotool` と `xprintidle` はシステムパッケージのためバンドルできません。Linux 版を配布する際は以下を案内してください：
-> ```bash
-> sudo apt install xdotool xprintidle
-> ```
-
-### 使い方（ソースから実行）
-
-```bash
-# インタラクティブダッシュボード（推奨——バックグラウンドでトラッカーも起動）
-python src/main.py tui
-
-# トラッカーのみフォアグラウンドで起動（Ctrl+C で停止）
-python src/main.py start
-
-# 今日のアクティビティレポート
-python src/main.py report
-
-# 指定日のレポート
-python src/main.py report --date 2026-03-15
-
-# 今週のレポート
-python src/main.py week
-
-# 今何をしているか確認
-python src/main.py status
-
-# ログイン時の自動起動を登録
-python src/main.py install
-
-# 自動起動の登録解除
-python src/main.py uninstall
-```
-
----
-
 ## 付録 — 機能リファレンス
 
 上の**要件定義**の各要件は、**機能**（F1–F7）または**品質属性**（NF1–NF6）にマップされています。
@@ -443,7 +315,7 @@ python src/main.py uninstall
 | F3 | スナップショットを SQLite に保存 | シンプル、移植性、ゼロ設定、サーバー不要 |
 | F4 | TUI プロセス内にトラッカーを内包 | `argus tui` 一発で起動、バックグラウンドサービス不要 |
 | F5 | ログイン時に自動起動 | ユーザー行動ゼロで記録開始 |
-| F6 | 多言語対応 TUI（6 言語） | 非英語話者へのアクセシビリティ |
+| F6 | 多言語対応 TUI（6 言語）| 非英語話者へのアクセシビリティ |
 | F7 | 12 色のテーマ | コード変更なしでパーソナライズ |
 
 **非機能的品質属性：**

@@ -1,13 +1,10 @@
-# Argus
+﻿# Argus
 
-|
-|**README 语言：** [English](README.md) · [日本語](README.ja.md) · 中文
-|
-|> *以希腊神话中百眼巨人 Argus Panoptes 命名——他从不安睡，时刻注视着一切。*
-|
-|> *一个简单的问题，开启了六个月的独立开发之旅：我的时间究竟去了哪里？*
-|
-|一个 Python 工具，每 5 秒静默记录当前活跃的应用和窗口。在后台运行，随时调出实时仪表盘或终端报告，清楚了解你的时间都去了哪里。
+**README 语言：** [English](README.md) · [日本語](README.ja.md) · 中文
+
+> *以希腊神话中百眼巨人 Argus Panoptes 命名——他从不安睡，时刻注视着一切。*
+
+> *一个简单的问题，开启了六个月的独立开发之旅：我的时间究竟去了哪里？*
 
 ## Screenshots
 
@@ -226,6 +223,41 @@ POLL_INTERVAL  = 5    # 快照间隔（秒）
 IDLE_THRESHOLD  = 60   # 标记为空闲的无操作时长（秒）
 ```
 
+**TUI — 键盘快捷键：**
+
+| 按键 | 功能 |
+|---|
+| `R` | 立即刷新所有数据 |
+| `T` | 切换颜色主题 |
+| `L` | 切换界面语言（6 种语言）|
+| `A` | 切换自动启动 |
+| `O` | 打开数据文件夹 |
+| `[` `]` | 上一天 / 下一天 |
+| `{` `}` | 上一周 / 下一周 |
+| `Q` | 退出 |
+
+运行 `argus tui` 打开由 [Textual](https://textual.textualize.io/) 驱动的全终端实时仪表盘，同时在后台运行追踪器，无需单独执行 `start`。
+
+**显示内容**
+
+- **状态面板** — 当前应用、分类、窗口标题、空闲时间、快照总数
+- **今日** — 前 10 个应用及分类占比（含进度条）
+- **本周** — 逐日汇总、每周分类分布、每周热门应用
+
+每 5 秒自动刷新。
+
+TUI 支持 6 种语言，按 `L` 循环切换：
+
+`en` (English) · `ja` (日本語) · `zh` (中文) · `fr` (Français) · `de` (Deutsch) · `es` (Español)
+
+语言选择保存至 `~/.argus/settings.json`，下次启动时自动恢复。
+
+在 TUI 中按 `T` 循环切换 12 个内置 Textual 主题：
+
+`textual-dark` · `textual-light` · `nord` · `gruvbox` · `catppuccin-mocha` · `catppuccin-latte` · `dracula` · `tokyo-night` · `monokai` · `solarized-dark` · `solarized-light` · `flexoki`
+
+主题选择同样自动保存并恢复。
+
 ---
 
 ## 起源故事
@@ -311,125 +343,6 @@ argus uninstall  # Disable auto-start
 
 ---
 
-## Keyboard shortcuts (TUI)
-
-| 按键 | 功能 |
-|---|---|
-| `R` | 立即刷新所有数据 |
-| `T` | 切换颜色主题 |
-| `L` | 切换界面语言（6 种语言）|
-| `A` | 切换自动启动 |
-| `O` | 打开数据文件夹 |
-| `[` `]` | 上一天 / 下一天 |
-| `{` `}` | 上一周 / 下一周 |
-| `Q` | 退出 |
-
----
-
-## TUI 仪表盘
-
-运行 `argus tui` 打开由 [Textual](https://textual.textualize.io/) 驱动的全终端实时仪表盘，同时在后台运行追踪器，无需单独执行 `start`。
-
-**显示内容**
-
-- **状态面板** — 当前应用、分类、窗口标题、空闲时间、快照总数
-- **今日** — 前 10 个应用及分类占比（含进度条）
-- **本周** — 逐日汇总、每周分类分布、每周热门应用
-
-每 5 秒自动刷新。
-
----
-
-## 语言支持
-
-TUI 支持 6 种语言，按 `L` 循环切换：
-
-`en` (English) · `ja` (日本語) · `zh` (中文) · `fr` (Français) · `de` (Deutsch) · `es` (Español)
-
-语言选择保存至 `~/.argus/settings.json`，下次启动时自动恢复。
-
----
-
-## 主题
-
-在 TUI 中按 `T` 循环切换 12 个内置 Textual 主题：
-
-`textual-dark` · `textual-light` · `nord` · `gruvbox` · `catppuccin-mocha` · `catppuccin-latte` · `dracula` · `tokyo-night` · `monokai` · `solarized-dark` · `solarized-light` · `flexoki`
-
-主题选择同样自动保存并恢复。
-
----
-
-## Setup & Building
-
-```bash
-pip install -r requirements.txt
-```
-
-**仅 Linux** — 额外安装两个系统包：
-
-```bash
-sudo apt install xdotool xprintidle   # Ubuntu / Debian
-sudo dnf install xdotool xprintidle   # Fedora
-```
-
-### 构建独立可执行文件
-
-将 Argus 打包为单个文件，终端用户无需安装 Python 或 pip。
-
-```bash
-# 安装构建工具（仅需一次）
-pip install -r requirements-dev.txt
-
-# 构建
-python build.py
-```
-
-输出到 `dist/` 目录：
-
-| 平台 | 文件 |
-|---|---|
-| Windows | `dist/argus.exe` |
-| Linux | `dist/argus` |
-| macOS | `dist/argus` |
-
-可执行文件完全自包含——Python、Textual、Rich 及所有依赖均已打包。**终端用户无需安装任何额外内容。**
-
-> **Linux 注意：** `xdotool` 和 `xprintidle` 是系统包，无法打包进可执行文件。分发 Linux 版本时请提示用户：
-> ```bash
-> sudo apt install xdotool xprintidle
-> ```
-
-### 使用方法（源码运行）
-
-```bash
-# 交互式仪表盘（推荐——同时在后台运行追踪器）
-python src/main.py tui
-
-# 仅在前台运行追踪器（Ctrl+C 停止）
-python src/main.py start
-
-# 今日活动报告
-python src/main.py report
-
-# 指定日期的报告
-python src/main.py report --date 2026-03-15
-
-# 本周报告
-python src/main.py week
-
-# 查看当前正在做什么
-python src/main.py status
-
-# 注册开机自启
-python src/main.py install
-
-# 取消开机自启
-python src/main.py uninstall
-```
-
----
-
 ## 附录 — 功能参考
 
 上面的**需求定义**中的每条需求映射到**功能**（F1–F7）或**质量属性**（NF1–NF6）。
@@ -443,7 +356,7 @@ python src/main.py uninstall
 | F3 | 快照存储至 SQLite | 简单、便携、零配置、无需服务器 |
 | F4 | 在 TUI 进程内运行追踪器 | 单个 `argus tui` 启动全部，无需独立守护进程 |
 | F5 | 登录时自动启动 | 无摩擦 — 无需用户操作即开始记录 |
-| F6 | 多语言 TUI（6 种语言） | 非英语用户无障碍使用 |
+| F6 | 多语言 TUI（6 种语言）| 非英语用户无障碍使用 |
 | F7 | 12 套配色主题 | 无需改代码即可个性化 |
 
 **非功能性质量属性：**
