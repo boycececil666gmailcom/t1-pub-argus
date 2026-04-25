@@ -58,7 +58,7 @@ jobs:
             libnss3 \
             libxss1 \
             libxslt1.1 \
-            libasound2 \
+            libasound2t64 \
             libxtst6 \
             xdg-utils \
             xdotool \
